@@ -1,0 +1,135 @@
+* {
+	margin: auto;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+
+body {
+    background-color: #17202a;
+}
+nav.navbar {
+    color:white;
+    height: 80px;
+    font-size: 25px;
+}
+.secundario{
+    color: white;
+    text-align: center;
+    
+    
+}
+img.logo {
+	height:78px;
+	width:300px;
+}
+
+ul.logo {
+	 list-style:none;
+}
+
+.carousel{
+    max-width: max-content;
+}
+.gallery{
+    display: grid;
+    gap: 3px;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.contact{
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    background-color: #ffffff;
+    align-items: center;
+    padding-left: 80px;
+    padding-right: 80px;
+    }
+
+
+.container-location {
+    position: absolute;
+}
+
+div.carousel-inner{
+    max-width: max-content;
+
+}
+
+.card {
+    border: 0px;
+    max-width: max-content;
+}
+
+div.gallery {
+  border: 0px solid #ccc;
+  margin:5px;
+}
+
+div.gallery:hover {
+  border: 0px solid #777;
+}
+
+div.gallery-marcas img {
+  width: 400px;
+  height: 300px;
+  text-align: center;
+
+}
+
+
+div.desc {
+  padding: 15px;
+  text-align: center;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.responsive {
+  padding: 0 6px;
+  float: left;
+  width: 24.99999%;
+}
+
+@media only screen and (max-width: 700px) {
+  .responsive {
+    width: 49.99999%;
+    margin: 6px 0;
+  }
+}
+
+@media only screen and (max-width: 500px) {
+  .responsive {
+    width: 100%;
+  }
+}
+
+.clearfix:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+
+/* .grid-container{
+    display: flex;
+    margin: auto;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    grid-auto-flow: row dense;
+    text-align: center;
+} */
+
+/* .grid-container .row{
+    width: 400px;
+	height: 400px;
+	position: relative;
+	margin-bottom: 35px;
+	border-radius: 5px;
+	box-shadow: 0px 0px 6px 0px rgba(0, 0, 0, 0.75);
+	transition: 0.6s ease;
+
+} */

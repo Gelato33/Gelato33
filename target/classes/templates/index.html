@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Dr.Chip Chile</title>
+	<script th:src="@{/jquery/jquery-3.6.0.js}"></script>
+	<script th:src="@{/bootstrap/js/bootstrap.min.js}"></script>
+	<script th:src="@{/bootstrap/js/bootstrap.bundle.min.js}"></script>
+	<link rel="stylesheet" th:href="@{/bootstrap/css/bootstrap.min.css}">
+	</link>
+	<link rel="stylesheet" th:href="@{/bootstrap/css/bootstrap-grid.min.css}">
+	</link>
+	<link rel="stylesheet" th:href="@{/css/style.css}">
+
+<body class>
+	<div class="header">
+		<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+			<div class="container">
+				<ul class="logo">
+					<li class="logo">
+						<img th:src="@{/img/logoFondoTrasparente.png}" class="logo" alt="...">
+					</li>
+
+				</ul>
+				<ul class="navbar-nav">
+					<li class="nav-item">
+						<a class="nav-link active" href="#">Inicio</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#">Servicios</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href=".modelosGallery">Modelos</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link disabled" href="#">Abouty</a>
+					</li>
+				</ul>
+			</div>
+		</nav>
+	</div>
+	<main class="container">
+
+
+		<div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
+			<div class="carousel-indicators">
+				<button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active"
+					aria-current="true" aria-label="Slide 1"></button>
+				<button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1"
+					aria-label="Slide 2"></button>
+				<button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2"
+					aria-label="Slide 3"></button>
+			</div>
+			<div class="carousel-inner">
+				<div class="carousel-item active">
+					<img th:src="@{/img/sliderWebInicio.png}" class="d-block w-100" style="width:100%" alt="...">
+				</div>
+				<div class="carousel-item">
+					<img th:src="@{/img/sliderWebInicio.png}" class="d-block w-100" style="width:100%" alt="...">
+				</div>
+				<div class="carousel-item">
+					<img th:src="@{/img/sliderWebInicio.png}" class="d-block w-100" style="width:100%" alt="...">
+				</div>
+			</div>
+			<button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators"
+				data-bs-slide="prev">
+				<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+				<span class="visually-hidden">Previous</span>
+			</button>
+			<button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators"
+				data-bs-slide="next">
+				<span class="carousel-control-next-icon" aria-hidden="true"></span>
+				<span class="visually-hidden">Next</span>
+			</button>
+		</div>
+		<br>
+		<div class="gallery">
+			<article class="card" style="width: 300px;">
+				<img th:src="@{/img/petronas.png}" class="card-img-top" alt="...">
+				<div class="card-body">
+					<h5 class="card-title">Mantención aceite y servidio DPF OFF</h5>
+					<p class="card-text">Dmax con problemas de incremento de aceite, eliminamos DPF y fin de problemas.
+						Contamos con uno de los mejores aceites en la actualidad, vendido por concesionaria Mercedes
+						Benz.</p>
+					<a href="#" class="btn btn-primary">VER MAS</a>
+				</div>
+			</article>
+
+			<article class="card" style="width: 300px;">
+				<img th:src="@{/img/box1.png}" class="card-img-top" alt="...">
+				<div class="card-body">
+					<h5 class="card-title">Reprogramación de potencia Stage 1 y 2-VMax OFF</h5>
+					<p class="card-text">Dejamos tu camioneta con el mejor rendimiento que puede obtener por medio de
+						una programación directa. Cotiza tu modelo con nosotros directamente, contamos con equipos de
+						ultima gamma</p>
+					<a href="#" class="btn btn-primary">Cotizar modelo</a>
+				</div>
+			</article>
+
+			<article class="card" style="width: 300px;">
+				<img th:src="@{/img/box1.png}" class="card-img-top" alt="...">
+				<div class="card-body">
+					<h5 class="card-title">Card title</h5>
+					<p class="card-text">Some quick example text to build on the card title and make up the bulk of the
+						card's content.</p>
+					<a href="#" class="btn btn-primary">Go somewhere</a>
+				</div>
+			</article>
+		</div>
+	</main>
+	<br>
+	<div class="contact">
+		<article class="map">
+			<br>
+			<h1>Conoce nuestro local</h1>
+			<iframe
+				src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d6224.041503014936!2d-72.60600368588679!3d-38.74028602667774!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sdr%20chip!5e0!3m2!1ses-419!2scl!4v1640380948419!5m2!1ses-419!2scl"
+				width="450" height="450" style="border:1;" allowfullscreen="" loading="lazy">
+				Mapa
+			</iframe>
+		</article>
+		<article class="card" id="card-contact" style="width: 18rem;">
+			<div>
+				<h2>Nuestra ubicación!</h2>
+				<h6>Dirección: Av. San martin #458 </h6>
+				<h6>Telefono: +56 9 58697451 </h6>
+				<h6>Correo: ventas@drchip.cl </h6>
+			</div>
+		</article>
+		<figure>
+			<img th:src="@{/img/logoFondoTrasparente.png}" class="card-img-top" alt="...">
+		</figure>
+	</div>
+	</div>
+	<main class="secundario">
+		<div class="modelosGallery">
+			<br>
+			<br>
+			<h1> PROGRAMACIÓN DE MUCHAS MARCAS Y MODELOS DE VEHICULOS</h1>
+			<h2> Contamos con maquinas programadoras de ultima generacion para los vehiculos mas recientes del mercado
+			</h2>
+			<br>
+			<br>
+		</div>
+		<div>
+			<div class="responsive">
+				<div class="gallery-marcas">
+					<img th:src="@{/img/toyota.png}" class="card-img-top" alt="..." width="150px" height="150px">
+					<div class="desc">TOYOTA DIFERENTES MODELOS</div>
+				</div>
+			</div>
+			<div class="responsive">
+				<div class="gallery-marcas">
+					<img th:src="@{/img/dodge.png}" class="card-img-top" alt="..." width="150px" height="150px">
+					<div class="desc">DODGE DIFERENTES MODELOS ULTIMA GAMA</div>
+				</div>
+			</div>
+			<div class="responsive">
+				<div class="gallery-marcas">
+					<img th:src="@{/img/mazda.png}" class="card-img-top" alt="..." width="150px" height="150px">
+					<div class="desc">MAZDA DIFERENTES MODELOS ULTIMA GAMA</div>
+				</div>
+			</div>
+			<div class="responsive">
+				<div class="gallery-marcas">
+					<img th:src="@{/img/iveco.png}" class="card-img-top" alt="..." width="150px" height="150px">
+					<div class="desc">IVECO DIFERENTES MODELOS ULTIMA GAMA</div>
+				</div>
+			</div>
+		</div>
+	</main>
+
+
+
+
+
+
+</body>
+
+</html>
