@@ -1,2 +1,0 @@
-# primerDesarrolloRoddmason
-Mi primer repositorio
