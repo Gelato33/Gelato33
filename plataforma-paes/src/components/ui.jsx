@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fechaCorta, fechaLarga, idYoutube, urlSegura, ETIQUETA_EVALUACION } from '../lib/utils'
 import { api } from '../data/api'
 
@@ -181,5 +181,43 @@ export function ClaseCard({ c, materiales = [], onEditar, onBorrar, hoy }) {
         )}
       </div>
     </li>
+  )
+}
+
+// Cuadro de confirmación dentro de la página. Esc o clic afuera cancelan.
+export function ModalConfirmar({ titulo, children, confirmar = 'Eliminar', error, onConfirmar, onCancelar }) {
+  const [trabajando, setTrabajando] = useState(false)
+  const botonCancelar = useRef(null)
+
+  useEffect(() => {
+    botonCancelar.current?.focus()
+    const tecla = (e) => e.key === 'Escape' && onCancelar()
+    document.addEventListener('keydown', tecla)
+    return () => document.removeEventListener('keydown', tecla)
+  }, [onCancelar])
+
+  const confirmarAccion = async () => {
+    setTrabajando(true)
+    try {
+      await onConfirmar()
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  return (
+    <div className="modal-fondo" onClick={(e) => e.target === e.currentTarget && onCancelar()}>
+      <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="modal-titulo">
+        <h2 id="modal-titulo">{titulo}</h2>
+        <div className="modal-cuerpo">{children}</div>
+        {error && <Aviso>{error}</Aviso>}
+        <div className="acciones">
+          <button type="button" ref={botonCancelar} className="btn sec" onClick={onCancelar}>Cancelar</button>
+          <button type="button" className="btn peligro solido" disabled={trabajando} onClick={confirmarAccion}>
+            {trabajando ? 'Eliminando…' : confirmar}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }

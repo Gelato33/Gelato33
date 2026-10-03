@@ -5,7 +5,7 @@ Hecha con Vite + React + Supabase y pensada para desplegarse en Netlify.
 
 | Rol | Qué puede hacer |
 |---|---|
-| Administrador | Inscribir estudiantes y elegir en qué asignaturas participan, agregar docentes, crear y eliminar asignaturas, asignar docentes a cada asignatura, desactivar cuentas |
+| Administrador | Inscribir estudiantes y elegir en qué asignaturas participan, agregar docentes, crear y eliminar asignaturas, asignar docentes a cada asignatura, desactivar o eliminar cuentas |
 | Docente | Crear las clases de cada asignatura (fecha, hora, contenidos y objetivos), subir su propio material (PDF, video de YouTube o enlace) asociado a una clase y programar evaluaciones, solo en las asignaturas que tiene asignadas |
 | Estudiante | Ver las clases, el material y las evaluaciones de las asignaturas en que está inscrito, reproducir videos y marcar lo que ya vio (alimenta su avance) |
 
@@ -32,11 +32,12 @@ Abre la URL que muestra la terminal y elige un rol en la pantalla de ingreso.
      insert into profiles (id, nombre, email, rol)
      select id, 'Tu Nombre', email, 'admin' from auth.users where email = 'tu@correo.cl';
      ```
-4. Despliega la función que crea usuarios (necesita la [CLI de Supabase](https://supabase.com/docs/guides/cli)):
+4. Despliega las funciones que crean y eliminan usuarios (necesita la [CLI de Supabase](https://supabase.com/docs/guides/cli)):
    ```bash
    supabase login
    supabase link --project-ref TU-REF
    supabase functions deploy crear-usuario
+   supabase functions deploy eliminar-usuario
    ```
 5. Copia `.env.example` como `.env.local` y completa `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (en **Project Settings > API**). Reinicia `npm run dev`.
 
@@ -66,7 +67,7 @@ src/
   components/  piezas compartidas
 supabase/
   migrations/  esquema y reglas de seguridad (RLS)
-  functions/   crear-usuario (Edge Function)
+  functions/   crear-usuario y eliminar-usuario (Edge Functions), _shared (código común)
 ```
 
 La seguridad vive en la base de datos (RLS), no en el navegador: aunque alguien modifique la app, Supabase solo entrega lo que su rol permite.

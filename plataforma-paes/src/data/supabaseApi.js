@@ -9,6 +9,15 @@ const SEL = '*, asignatura:asignaturas(nombre,color), profesor:profiles!profesor
 const SEL_MAT = SEL + ', clase:clases(titulo)'
 const SEL_EVAL = '*, asignatura:asignaturas(nombre,color)'
 
+const llamarFuncion = async (nombre, body) => {
+  const { data, error } = await supabase.functions.invoke(nombre, { body })
+  if (error) {
+    const detalle = await error.context?.json?.().catch(() => null)
+    throw new Error(detalle?.error ?? error.message)
+  }
+  return data
+}
+
 const idActual = async () => (await supabase.auth.getSession()).data.session.user.id
 
 export const asignaturas = {
@@ -31,15 +40,9 @@ export const usuarios = {
       asignaturas: f.matriculas.map((m) => m.asignatura?.nombre).filter(Boolean),
     }))
   },
-  // La creación pasa por una Edge Function porque requiere la service role key.
-  create: async (datos) => {
-    const { data, error } = await supabase.functions.invoke('crear-usuario', { body: datos })
-    if (error) {
-      const detalle = await error.context?.json?.().catch(() => null)
-      throw new Error(detalle?.error ?? error.message)
-    }
-    return data
-  },
+  // Crear y eliminar cuentas pasa por Edge Functions porque requiere la service role key.
+  create: (datos) => llamarFuncion('crear-usuario', datos),
+  remove: (id) => llamarFuncion('eliminar-usuario', { id }),
   setActivo: (id, activo) => supabase.from('profiles').update({ activo }).eq('id', id).then(ok),
   // Reemplaza las asignaturas en que está inscrito un estudiante.
   setAsignaturas: async (id, ids) => {

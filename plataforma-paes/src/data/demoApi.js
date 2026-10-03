@@ -109,6 +109,18 @@ export const usuarios = {
   setAsignaturas: async (id, ids) => {
     persona(id).asignatura_ids = [...ids]
   },
+  // Igual que en Supabase: se borra en cascada lo que el usuario creó o tenía asociado.
+  remove: async (id) => {
+    const u = persona(id)
+    if (!u) throw new Error('El usuario no existe')
+    if (u.rol === 'admin') throw new Error('No se puede eliminar a un administrador')
+    db.usuarios = db.usuarios.filter((x) => x.id !== id)
+    for (const tabla of ['asignaciones', 'clases', 'materiales', 'evaluaciones']) {
+      db[tabla] = db[tabla].filter((f) => f.profesor_id !== id)
+    }
+    for (const m of db.materiales) if (m.clase_id && !db.clases.some((c) => c.id === m.clase_id)) m.clase_id = null
+    db.vistos = db.vistos.filter((v) => v.estudiante_id !== id && db.materiales.some((m) => m.id === v.material_id))
+  },
 }
 
 export const matriculas = {

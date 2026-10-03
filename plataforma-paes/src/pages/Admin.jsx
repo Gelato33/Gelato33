@@ -5,7 +5,7 @@ import { api } from '../data/api'
 import { useAsync } from '../lib/useAsync'
 import { marca } from '../lib/marca'
 import { normalizar } from '../lib/utils'
-import { Aviso, BotonBorrar, Cargando } from '../components/ui'
+import { Aviso, BotonBorrar, Cargando, ModalConfirmar } from '../components/ui'
 
 // Ejecuta una acción y muestra el error en pantalla si falla.
 function useAccion(reload) {
@@ -70,10 +70,61 @@ function SelectorAsignaturas({ asignaturas, value, onChange, leyenda }) {
   )
 }
 
+const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`
+const iniciales = (nombre) => nombre.split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
+
+// Panel que se despliega al hacer clic en un usuario: sus asignaturas y qué hacer con su cuenta.
+function DetalleUsuario({ u, asignaturas, esEstudiante, dictadas, contenido, onGuardar, onActivo, onEliminar }) {
+  const [ids, setIds] = useState(u.asignatura_ids)
+  const cambiado = ids.length !== u.asignatura_ids.length || ids.some((id) => !u.asignatura_ids.includes(id))
+  return (
+    <div className="usuario-detalle">
+      {esEstudiante ? (
+        <div>
+          <SelectorAsignaturas asignaturas={asignaturas} value={ids} onChange={setIds} leyenda="Asignaturas en que está inscrito" />
+          <div className="acciones">
+            <button type="button" className="btn" disabled={!cambiado} onClick={() => onGuardar(ids)}>Guardar asignaturas</button>
+            {cambiado && <button type="button" className="btn sec" onClick={() => setIds(u.asignatura_ids)}>Deshacer</button>}
+          </div>
+        </div>
+      ) : (
+        <div>
+          <h4>Enseña</h4>
+          {dictadas.length ? (
+            <div className="docentes">{dictadas.map((n) => <span key={n} className="tag a">{n}</span>)}</div>
+          ) : (
+            <p className="vacio">Sin asignaturas. Asígnalas en la sección Asignaturas.</p>
+          )}
+          <small className="nota">
+            Ha creado {plural(contenido.clases, 'clase', 'clases')}, {plural(contenido.materiales, 'material', 'materiales')} y {plural(contenido.evaluaciones, 'evaluación', 'evaluaciones')}.
+          </small>
+        </div>
+      )}
+      <div className="cuenta">
+        <h4>Cuenta</h4>
+        <div className="acciones">
+          <button type="button" className="btn sec" onClick={onActivo}>{u.activo ? 'Desactivar cuenta' : 'Activar cuenta'}</button>
+          <button type="button" className="btn peligro" onClick={onEliminar}>Eliminar {esEstudiante ? 'estudiante' : 'docente'}</button>
+        </div>
+        <small className="nota">
+          {u.activo ? 'Desactivar impide que ingrese, pero conserva todos sus datos.' : 'Cuenta desactivada: no puede ingresar.'}
+        </small>
+      </div>
+    </div>
+  )
+}
+
 function Usuarios({ rol }) {
   const esEstudiante = rol === 'estudiante'
   const { data, error, loading, reload } = useAsync(
-    () => Promise.all([api.usuarios.list(rol), api.asignaturas.list(), esEstudiante ? [] : api.asignaciones.list()]),
+    () =>
+      Promise.all([
+        api.usuarios.list(rol), api.asignaturas.list(),
+        esEstudiante ? [] : api.asignaciones.list(),
+        esEstudiante ? [] : api.clases.list(),
+        esEstudiante ? [] : api.materiales.list(),
+        esEstudiante ? [] : api.evaluaciones.list(),
+      ]),
     [rol],
   )
   const [errorAccion, ejecutar] = useAccion(reload)
@@ -82,15 +133,16 @@ function Usuarios({ rol }) {
   const [password, setPassword] = useState('')
   const [seleccion, setSeleccion] = useState([])
   const [enviando, setEnviando] = useState(false)
-  const [editando, setEditando] = useState(null) // { id, ids }
+  const [abierto, setAbierto] = useState(null)
+  const [aEliminar, setAEliminar] = useState(null)
+  const [errorBorrar, setErrorBorrar] = useState('')
   const [busqueda, setBusqueda] = useState('')
 
   if (loading && !data) return <Cargando />
   if (error) return <Aviso>{error}</Aviso>
-  const [lista, asignaturas, asignaciones] = data
+  const [lista, asignaturas, asignaciones, clases, materiales, evaluaciones] = data
   const activos = lista.filter((u) => u.activo).length
   const lleno = esEstudiante && activos >= marca.maxEstudiantes
-  const elegidas = seleccion
   // Cada palabra escrita debe aparecer en el nombre, el correo o las asignaturas.
   const palabras = normalizar(busqueda).split(/\s+/).filter(Boolean)
   const visibles = palabras.length
@@ -103,7 +155,7 @@ function Usuarios({ rol }) {
   const crear = async (e) => {
     e.preventDefault()
     setEnviando(true)
-    const ok = await ejecutar(() => api.usuarios.create({ nombre, email, password, rol, asignatura_ids: esEstudiante ? elegidas : [] }))
+    const ok = await ejecutar(() => api.usuarios.create({ nombre, email, password, rol, asignatura_ids: esEstudiante ? seleccion : [] }))
     setEnviando(false)
     if (ok) {
       setNombre('')
@@ -113,10 +165,27 @@ function Usuarios({ rol }) {
     }
   }
 
-  const asignaturasDe = (u) =>
+  const eliminar = async () => {
+    setErrorBorrar('')
+    try {
+      await api.usuarios.remove(aEliminar.id)
+      setAEliminar(null)
+      setAbierto(null)
+      reload()
+    } catch (err) {
+      setErrorBorrar(err.message)
+    }
+  }
+
+  const contenidoDe = (id) => ({
+    clases: clases.filter((c) => c.profesor_id === id).length,
+    materiales: materiales.filter((m) => m.profesor_id === id).length,
+    evaluaciones: evaluaciones.filter((e) => e.profesor_id === id).length,
+  })
+  const resumen = (u) =>
     esEstudiante
       ? u.asignaturas.length === asignaturas.length ? 'Todas' : `${u.asignaturas.length} de ${asignaturas.length}`
-      : asignaciones.filter((a) => a.profesor_id === u.id).map((a) => a.asignatura.nombre).join(', ') || 'Sin asignaturas'
+      : plural(asignaciones.filter((a) => a.profesor_id === u.id).length, 'asignatura', 'asignaturas')
 
   return (
     <div className="dos">
@@ -132,53 +201,43 @@ function Usuarios({ rol }) {
           />
           {palabras.length > 0 && <small aria-live="polite">Mostrando {visibles.length} de {lista.length}</small>}
         </div>
-        <div className="tabla">
-          <table>
-            <thead>
-              <tr><th>Nombre</th><th>Correo</th><th>Asignaturas</th><th>Estado</th><th /></tr>
-            </thead>
-            <tbody>
-              {visibles.map((u) => (
-                <FilaUsuario
-                  key={u.id}
-                  u={u}
-                  resumen={asignaturasDe(u)}
-                  editable={esEstudiante}
-                  activa={editando?.id === u.id}
-                  onEditar={() => setEditando({ id: u.id, ids: u.asignatura_ids })}
-                  onActivo={() => ejecutar(() => api.usuarios.setActivo(u.id, !u.activo))}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul className="usuarios">
+          {visibles.map((u) => {
+            const abre = abierto === u.id
+            return (
+              <li key={u.id} className={`usuario${abre ? ' abierto' : ''}${u.activo ? '' : ' inactivo'}`}>
+                <button type="button" className="usuario-cab" aria-expanded={abre} onClick={() => setAbierto(abre ? null : u.id)}>
+                  <span className="avatar" aria-hidden="true">{iniciales(u.nombre)}</span>
+                  <span className="datos"><b>{u.nombre}</b><small>{u.email}</small></span>
+                  <span className="resumen">{resumen(u)}</span>
+                  <span className={`tag ${u.activo ? 'b' : 'c'}`}>{u.activo ? 'Activo' : 'Desactivado'}</span>
+                  <span className="flecha" aria-hidden="true">▾</span>
+                </button>
+                {abre && (
+                  <DetalleUsuario
+                    key={`${u.id}-${u.asignatura_ids.join()}`}
+                    u={u}
+                    asignaturas={asignaturas}
+                    esEstudiante={esEstudiante}
+                    dictadas={asignaciones.filter((a) => a.profesor_id === u.id).map((a) => a.asignatura.nombre)}
+                    contenido={esEstudiante ? null : contenidoDe(u.id)}
+                    onGuardar={(ids) => ejecutar(() => api.usuarios.setAsignaturas(u.id, ids))}
+                    onActivo={() => ejecutar(() => api.usuarios.setActivo(u.id, !u.activo))}
+                    onEliminar={() => {
+                      setErrorBorrar('')
+                      setAEliminar(u)
+                    }}
+                  />
+                )}
+              </li>
+            )
+          })}
+        </ul>
         {lista.length === 0 && <p className="vacio">Aún no hay {esEstudiante ? 'estudiantes' : 'docentes'}.</p>}
         {lista.length > 0 && visibles.length === 0 && (
           <p className="vacio">
             Ningún resultado para «{busqueda.trim()}». <button type="button" className="enlace" onClick={() => setBusqueda('')}>Limpiar búsqueda</button>
           </p>
-        )}
-        {editando && (
-          <div className="panel-edicion">
-            <SelectorAsignaturas
-              asignaturas={asignaturas}
-              value={editando.ids}
-              onChange={(ids) => setEditando({ ...editando, ids })}
-              leyenda={`Asignaturas de ${lista.find((u) => u.id === editando.id)?.nombre}`}
-            />
-            <div className="acciones">
-              <button
-                type="button"
-                className="btn"
-                onClick={async () => {
-                  if (await ejecutar(() => api.usuarios.setAsignaturas(editando.id, editando.ids))) setEditando(null)
-                }}
-              >
-                Guardar
-              </button>
-              <button type="button" className="btn sec" onClick={() => setEditando(null)}>Cancelar</button>
-            </div>
-          </div>
         )}
         {errorAccion && <Aviso>{errorAccion}</Aviso>}
       </section>
@@ -195,7 +254,7 @@ function Usuarios({ rol }) {
               <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required autoComplete="off" />
             </label>
             {esEstudiante && (
-              <SelectorAsignaturas asignaturas={asignaturas} value={elegidas} onChange={setSeleccion} leyenda="Inscribir en estas asignaturas" />
+              <SelectorAsignaturas asignaturas={asignaturas} value={seleccion} onChange={setSeleccion} leyenda="Inscribir en estas asignaturas" />
             )}
             {errorAccion && <Aviso>{errorAccion}</Aviso>}
             <button className="btn" disabled={enviando}>{enviando ? 'Guardando…' : 'Crear usuario'}</button>
@@ -203,24 +262,33 @@ function Usuarios({ rol }) {
           </form>
         )}
       </section>
+      {aEliminar && (
+        <ModalConfirmar
+          titulo={`¿Eliminar ${esEstudiante ? 'al estudiante' : 'al docente'} ${aEliminar.nombre}?`}
+          confirmar={`Sí, eliminar ${esEstudiante ? 'estudiante' : 'docente'}`}
+          error={errorBorrar}
+          onConfirmar={eliminar}
+          onCancelar={() => setAEliminar(null)}
+        >
+          {esEstudiante ? (
+            <p>Se borrará su cuenta junto con su avance en el material. Esta acción no se puede deshacer.</p>
+          ) : (
+            <>
+              {(() => {
+                const c = contenidoDe(aEliminar.id)
+                return (
+                  <p>
+                    Se borrará su cuenta y también todo lo que creó: {plural(c.clases, 'clase', 'clases')}, {plural(c.materiales, 'material', 'materiales')} y {plural(c.evaluaciones, 'evaluación', 'evaluaciones')}.
+                    Sus estudiantes dejarán de verlos. Esta acción no se puede deshacer.
+                  </p>
+                )
+              })()}
+            </>
+          )}
+          <p>Si solo quieres que no pueda ingresar, cancela y usa <b>Desactivar cuenta</b>.</p>
+        </ModalConfirmar>
+      )}
     </div>
-  )
-}
-
-function FilaUsuario({ u, resumen, editable, activa, onEditar, onActivo }) {
-  return (
-    <tr className={activa ? 'activa' : undefined}>
-      <td><b>{u.nombre}</b></td>
-      <td className="correo">{u.email}</td>
-      <td title={u.asignaturas?.join(', ')}>{resumen}</td>
-      <td><span className={`tag ${u.activo ? 'b' : 'c'}`}>{u.activo ? 'Activo' : 'Desactivado'}</span></td>
-      <td>
-        <div className="botones">
-          {editable && <button type="button" className="btn sec" onClick={onEditar}>Asignaturas</button>}
-          <button type="button" className="btn sec" onClick={onActivo}>{u.activo ? 'Desactivar' : 'Activar'}</button>
-        </div>
-      </td>
-    </tr>
   )
 }
 

@@ -1,33 +1,13 @@
 // Edge Function: crea estudiantes y docentes. Solo la puede usar un administrador.
-// Crear usuarios requiere la service role key, que nunca debe estar en el navegador.
 // Despliegue: supabase functions deploy crear-usuario
-import { createClient } from 'jsr:@supabase/supabase-js@2'
-
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-const responder = (cuerpo: unknown, status = 200) =>
-  new Response(JSON.stringify(cuerpo), {
-    status,
-    headers: { ...cors, 'Content-Type': 'application/json' },
-  })
+import { cors, exigirAdmin, responder } from '../_shared/admin.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
-  const url = Deno.env.get('SUPABASE_URL')!
-  const llamante = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
-    global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
-  })
-  const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-
-  const { data: { user } } = await llamante.auth.getUser()
-  if (!user) return responder({ error: 'No autenticado' }, 401)
-
-  const { data: perfil } = await admin.from('profiles').select('rol, activo').eq('id', user.id).single()
-  if (perfil?.rol !== 'admin' || !perfil.activo) return responder({ error: 'Solo un administrador puede crear usuarios' }, 403)
+  const auth = await exigirAdmin(req)
+  if ('error' in auth) return auth.error
+  const { admin } = auth
 
   const { nombre, email, password, rol, asignatura_ids } = await req.json()
   if (!nombre?.trim() || !email?.trim() || !password || password.length < 8) {
