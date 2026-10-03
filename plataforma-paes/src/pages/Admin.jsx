@@ -23,23 +23,48 @@ function useAccion(reload) {
   return [error, ejecutar]
 }
 
+// Agrupa "Ciencias · Biología", "Ciencias · Física"... bajo un mismo título.
+function agruparAsignaturas(asignaturas) {
+  const grupos = new Map()
+  for (const a of asignaturas) {
+    const [grupo, detalle] = a.nombre.split(' · ')
+    const clave = detalle ? grupo : a.nombre
+    if (!grupos.has(clave)) grupos.set(clave, [])
+    grupos.get(clave).push({ ...a, detalle })
+  }
+  return [...grupos.entries()].map(([nombre, items]) => ({
+    nombre,
+    items: items.map((a) => ({ ...a, etiqueta: items.length > 1 && a.detalle ? a.detalle : a.nombre })),
+  }))
+}
+
 function SelectorAsignaturas({ asignaturas, value, onChange, leyenda }) {
-  const todas = value.length === asignaturas.length
   const alternar = (id) => onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id])
   return (
     <fieldset className="grupo">
       <legend>{leyenda}</legend>
-      <div className="casillas">
-        {asignaturas.map((a) => (
-          <label key={a.id} className="check">
-            <input type="checkbox" checked={value.includes(a.id)} onChange={() => alternar(a.id)} />
-            {a.nombre}
-          </label>
-        ))}
+      <div className="selector-cab">
+        <span aria-live="polite">{value.length} de {asignaturas.length} seleccionadas</span>
+        <span>
+          <button type="button" className="enlace" onClick={() => onChange(asignaturas.map((a) => a.id))}>Todas</button>
+          {' · '}
+          <button type="button" className="enlace" onClick={() => onChange([])}>Ninguna</button>
+        </span>
       </div>
-      <button type="button" className="enlace" onClick={() => onChange(todas ? [] : asignaturas.map((a) => a.id))}>
-        {todas ? 'Quitar todas' : 'Seleccionar todas'}
-      </button>
+      {agruparAsignaturas(asignaturas).map((g) => (
+        <div key={g.nombre} className="selector-grupo">
+          {g.items.length > 1 && <h4>{g.nombre}</h4>}
+          <div className="opciones">
+            {g.items.map((a) => (
+              <button key={a.id} type="button" className="opcion" aria-pressed={value.includes(a.id)} onClick={() => alternar(a.id)}>
+                <span className="punto" style={{ background: a.color }} />
+                {a.etiqueta}
+                <span className="ok" aria-hidden="true">✓</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </fieldset>
   )
 }
@@ -54,7 +79,7 @@ function Usuarios({ rol }) {
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [seleccion, setSeleccion] = useState(null) // null = todas las asignaturas
+  const [seleccion, setSeleccion] = useState([])
   const [enviando, setEnviando] = useState(false)
   const [editando, setEditando] = useState(null) // { id, ids }
 
@@ -63,8 +88,7 @@ function Usuarios({ rol }) {
   const [lista, asignaturas, asignaciones] = data
   const activos = lista.filter((u) => u.activo).length
   const lleno = esEstudiante && activos >= marca.maxEstudiantes
-  const elegidas = seleccion ?? asignaturas.map((a) => a.id)
-  const columnas = 5
+  const elegidas = seleccion
 
   const crear = async (e) => {
     e.preventDefault()
@@ -75,6 +99,7 @@ function Usuarios({ rol }) {
       setNombre('')
       setEmail('')
       setPassword('')
+      setSeleccion([])
     }
   }
 
@@ -99,15 +124,8 @@ function Usuarios({ rol }) {
                   u={u}
                   resumen={asignaturasDe(u)}
                   editable={esEstudiante}
-                  editando={editando?.id === u.id ? editando : null}
-                  asignaturas={asignaturas}
-                  columnas={columnas}
+                  activa={editando?.id === u.id}
                   onEditar={() => setEditando({ id: u.id, ids: u.asignatura_ids })}
-                  onCambiar={(ids) => setEditando({ id: u.id, ids })}
-                  onCancelar={() => setEditando(null)}
-                  onGuardar={async () => {
-                    if (await ejecutar(() => api.usuarios.setAsignaturas(u.id, editando.ids))) setEditando(null)
-                  }}
                   onActivo={() => ejecutar(() => api.usuarios.setActivo(u.id, !u.activo))}
                 />
               ))}
@@ -115,6 +133,28 @@ function Usuarios({ rol }) {
           </table>
         </div>
         {lista.length === 0 && <p className="vacio">Aún no hay {esEstudiante ? 'estudiantes' : 'docentes'}.</p>}
+        {editando && (
+          <div className="panel-edicion">
+            <SelectorAsignaturas
+              asignaturas={asignaturas}
+              value={editando.ids}
+              onChange={(ids) => setEditando({ ...editando, ids })}
+              leyenda={`Asignaturas de ${lista.find((u) => u.id === editando.id)?.nombre}`}
+            />
+            <div className="acciones">
+              <button
+                type="button"
+                className="btn"
+                onClick={async () => {
+                  if (await ejecutar(() => api.usuarios.setAsignaturas(editando.id, editando.ids))) setEditando(null)
+                }}
+              >
+                Guardar
+              </button>
+              <button type="button" className="btn sec" onClick={() => setEditando(null)}>Cancelar</button>
+            </div>
+          </div>
+        )}
         {errorAccion && <Aviso>{errorAccion}</Aviso>}
       </section>
       <section className="tarjeta">
@@ -142,31 +182,20 @@ function Usuarios({ rol }) {
   )
 }
 
-function FilaUsuario({ u, resumen, editable, editando, asignaturas, columnas, onEditar, onCambiar, onCancelar, onGuardar, onActivo }) {
+function FilaUsuario({ u, resumen, editable, activa, onEditar, onActivo }) {
   return (
-    <>
-      <tr>
-        <td><b>{u.nombre}</b></td>
-        <td>{u.email}</td>
-        <td title={u.asignaturas?.join(', ')}>{resumen}</td>
-        <td><span className={`tag ${u.activo ? 'b' : 'c'}`}>{u.activo ? 'Activo' : 'Desactivado'}</span></td>
-        <td className="botones">
+    <tr className={activa ? 'activa' : undefined}>
+      <td><b>{u.nombre}</b></td>
+      <td className="correo">{u.email}</td>
+      <td title={u.asignaturas?.join(', ')}>{resumen}</td>
+      <td><span className={`tag ${u.activo ? 'b' : 'c'}`}>{u.activo ? 'Activo' : 'Desactivado'}</span></td>
+      <td>
+        <div className="botones">
           {editable && <button type="button" className="btn sec" onClick={onEditar}>Asignaturas</button>}
           <button type="button" className="btn sec" onClick={onActivo}>{u.activo ? 'Desactivar' : 'Activar'}</button>
-        </td>
-      </tr>
-      {editando && (
-        <tr className="edicion">
-          <td colSpan={columnas}>
-            <SelectorAsignaturas asignaturas={asignaturas} value={editando.ids} onChange={onCambiar} leyenda={`Asignaturas de ${u.nombre}`} />
-            <div className="acciones">
-              <button type="button" className="btn" onClick={onGuardar}>Guardar</button>
-              <button type="button" className="btn sec" onClick={onCancelar}>Cancelar</button>
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
+        </div>
+      </td>
+    </tr>
   )
 }
 
