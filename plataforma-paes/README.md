@@ -5,9 +5,9 @@ Hecha con Vite + React + Supabase y pensada para desplegarse en Netlify.
 
 | Rol | Qué puede hacer |
 |---|---|
-| Administrador | Inscribir estudiantes y docentes, crear y eliminar asignaturas y cursos, asignar docentes a cada curso, desactivar cuentas |
-| Docente | Crear las clases de cada asignatura (fecha, hora, contenidos y objetivos), subir su propio material (PDF, video de YouTube o enlace) asociado a una clase y programar evaluaciones, solo en sus cursos |
-| Estudiante | Ver las clases, el material y las evaluaciones de su curso, reproducir videos y marcar lo que ya vio (alimenta su avance) |
+| Administrador | Inscribir estudiantes y elegir en qué asignaturas participan, agregar docentes, crear y eliminar asignaturas, asignar docentes a cada asignatura, desactivar cuentas |
+| Docente | Crear las clases de cada asignatura (fecha, hora, contenidos y objetivos), subir su propio material (PDF, video de YouTube o enlace) asociado a una clase y programar evaluaciones, solo en las asignaturas que tiene asignadas |
+| Estudiante | Ver las clases, el material y las evaluaciones de las asignaturas en que está inscrito, reproducir videos y marcar lo que ya vio (alimenta su avance) |
 
 ## Probarla ahora (modo demo)
 
@@ -24,7 +24,7 @@ Abre la URL que muestra la terminal y elige un rol en la pantalla de ingreso.
 ## Conectarla a Supabase (modo real)
 
 1. Crea un proyecto en [supabase.com](https://supabase.com) (uno por institución).
-2. En **SQL Editor**, ejecuta en orden `supabase/migrations/001_esquema.sql` (tablas, reglas de seguridad por rol, almacenamiento privado de PDFs y las 6 asignaturas iniciales) y después `supabase/migrations/002_clases.sql` (clases).
+2. En **SQL Editor**, pega y ejecuta `supabase/migrations/001_esquema.sql`. Crea las tablas (asignaturas, clases, material, evaluaciones), las reglas de seguridad por rol, el almacenamiento privado de PDFs y las 6 asignaturas iniciales.
 3. Crea el primer administrador:
    - En **Authentication > Users** crea un usuario con correo y contraseña (marca "Auto Confirm User").
    - En el SQL Editor ejecuta, cambiando el correo y el nombre:

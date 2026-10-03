@@ -1,4 +1,4 @@
--- Esquema de la plataforma PAES.
+-- Esquema de la plataforma PAES (preuniversitario organizado por asignaturas).
 -- Ejecutar completo en Supabase > SQL Editor (una sola vez por institución).
 
 create extension if not exists pgcrypto;
@@ -25,30 +25,38 @@ create table asignaturas (
   activa boolean not null default true
 );
 
-create table cursos (
-  id uuid primary key default gen_random_uuid(),
-  nombre text not null unique
-);
-
+-- En qué asignaturas está inscrito cada estudiante.
 create table matriculas (
-  curso_id uuid not null references cursos (id) on delete cascade,
+  asignatura_id uuid not null references asignaturas (id) on delete cascade,
   estudiante_id uuid not null references profiles (id) on delete cascade,
-  primary key (curso_id, estudiante_id)
+  primary key (asignatura_id, estudiante_id)
 );
 
--- Qué profesor enseña qué asignatura en qué curso.
+-- Qué docentes enseñan cada asignatura (puede haber más de uno).
 create table asignaciones (
   id uuid primary key default gen_random_uuid(),
-  curso_id uuid not null references cursos (id) on delete cascade,
   asignatura_id uuid not null references asignaturas (id) on delete cascade,
   profesor_id uuid not null references profiles (id) on delete cascade,
-  unique (curso_id, asignatura_id)
+  unique (asignatura_id, profesor_id)
+);
+
+-- Cada clase corresponde a un contenido de una asignatura.
+create table clases (
+  id uuid primary key default gen_random_uuid(),
+  asignatura_id uuid not null references asignaturas (id) on delete cascade,
+  profesor_id uuid not null default auth.uid() references profiles (id) on delete cascade,
+  titulo text not null,
+  fecha date not null,
+  hora time,
+  contenido text,
+  objetivos text,
+  created_at timestamptz not null default now()
 );
 
 create table materiales (
   id uuid primary key default gen_random_uuid(),
-  curso_id uuid not null references cursos (id) on delete cascade,
   asignatura_id uuid not null references asignaturas (id) on delete cascade,
+  clase_id uuid references clases (id) on delete set null,
   profesor_id uuid not null default auth.uid() references profiles (id) on delete cascade,
   titulo text not null,
   tipo tipo_material not null,
@@ -60,7 +68,6 @@ create table materiales (
 
 create table evaluaciones (
   id uuid primary key default gen_random_uuid(),
-  curso_id uuid not null references cursos (id) on delete cascade,
   asignatura_id uuid not null references asignaturas (id) on delete cascade,
   profesor_id uuid not null default auth.uid() references profiles (id) on delete cascade,
   titulo text not null,
@@ -77,8 +84,10 @@ create table vistos (
 
 create index on matriculas (estudiante_id);
 create index on asignaciones (profesor_id);
-create index on materiales (curso_id, asignatura_id);
-create index on evaluaciones (curso_id, fecha);
+create index on clases (asignatura_id, fecha);
+create index on materiales (asignatura_id);
+create index on materiales (clase_id);
+create index on evaluaciones (asignatura_id, fecha);
 
 -- ───────────── Funciones auxiliares ─────────────
 -- security definer evita recursión entre políticas.
@@ -88,16 +97,15 @@ language sql stable security definer set search_path = public as $$
   select rol from profiles where id = auth.uid() and activo
 $$;
 
-create function mis_cursos() returns setof uuid
+create function mis_asignaturas() returns setof uuid
 language sql stable security definer set search_path = public as $$
-  select curso_id from matriculas where estudiante_id = auth.uid()
+  select asignatura_id from matriculas where estudiante_id = auth.uid()
 $$;
 
-create function enseno(p_curso uuid, p_asignatura uuid) returns boolean
+create function enseno(p_asignatura uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (
-    select 1 from asignaciones
-    where curso_id = p_curso and asignatura_id = p_asignatura and profesor_id = auth.uid()
+    select 1 from asignaciones where asignatura_id = p_asignatura and profesor_id = auth.uid()
   )
 $$;
 
@@ -105,9 +113,9 @@ $$;
 
 alter table profiles enable row level security;
 alter table asignaturas enable row level security;
-alter table cursos enable row level security;
 alter table matriculas enable row level security;
 alter table asignaciones enable row level security;
+alter table clases enable row level security;
 alter table materiales enable row level security;
 alter table evaluaciones enable row level security;
 alter table vistos enable row level security;
@@ -122,37 +130,54 @@ create policy asignaturas_leer on asignaturas for select to authenticated using 
 create policy asignaturas_admin on asignaturas for all to authenticated
   using (mi_rol() = 'admin') with check (mi_rol() = 'admin');
 
-create policy cursos_leer on cursos for select to authenticated using (mi_rol() is not null);
-create policy cursos_admin on cursos for all to authenticated
-  using (mi_rol() = 'admin') with check (mi_rol() = 'admin');
-
 create policy matriculas_leer on matriculas for select to authenticated
   using (estudiante_id = auth.uid() or mi_rol() = 'admin');
 create policy matriculas_admin on matriculas for all to authenticated
   using (mi_rol() = 'admin') with check (mi_rol() = 'admin');
 
 create policy asignaciones_leer on asignaciones for select to authenticated
-  using (mi_rol() = 'admin' or profesor_id = auth.uid() or curso_id in (select mis_cursos()));
+  using (mi_rol() = 'admin' or profesor_id = auth.uid() or asignatura_id in (select mis_asignaturas()));
 create policy asignaciones_admin on asignaciones for all to authenticated
   using (mi_rol() = 'admin') with check (mi_rol() = 'admin');
 
--- materiales: estudiantes ven los de sus cursos; cada profesor gestiona los suyos.
+-- clases: estudiantes ven las de sus asignaturas; cada docente gestiona las suyas.
+create policy clases_leer on clases for select to authenticated
+  using (mi_rol() = 'admin' or profesor_id = auth.uid() or asignatura_id in (select mis_asignaturas()));
+create policy clases_crear on clases for insert to authenticated
+  with check (
+    profesor_id = auth.uid()
+    and (mi_rol() = 'admin' or (mi_rol() = 'profesor' and enseno(asignatura_id)))
+  );
+create policy clases_editar on clases for update to authenticated
+  using (mi_rol() = 'admin' or profesor_id = auth.uid())
+  with check (
+    profesor_id = auth.uid()
+    and (mi_rol() = 'admin' or (mi_rol() = 'profesor' and enseno(asignatura_id)))
+  );
+create policy clases_borrar on clases for delete to authenticated
+  using (mi_rol() = 'admin' or profesor_id = auth.uid());
+
+-- materiales: la clase elegida debe ser de la misma asignatura.
 create policy materiales_leer on materiales for select to authenticated
-  using (mi_rol() = 'admin' or profesor_id = auth.uid() or curso_id in (select mis_cursos()));
+  using (mi_rol() = 'admin' or profesor_id = auth.uid() or asignatura_id in (select mis_asignaturas()));
 create policy materiales_crear on materiales for insert to authenticated
   with check (
     profesor_id = auth.uid()
-    and (mi_rol() = 'admin' or (mi_rol() = 'profesor' and enseno(curso_id, asignatura_id)))
+    and (mi_rol() = 'admin' or (mi_rol() = 'profesor' and enseno(asignatura_id)))
+    and (
+      clase_id is null
+      or exists (select 1 from clases c where c.id = materiales.clase_id and c.asignatura_id = materiales.asignatura_id)
+    )
   );
 create policy materiales_borrar on materiales for delete to authenticated
   using (mi_rol() = 'admin' or profesor_id = auth.uid());
 
 create policy evaluaciones_leer on evaluaciones for select to authenticated
-  using (mi_rol() = 'admin' or profesor_id = auth.uid() or curso_id in (select mis_cursos()));
+  using (mi_rol() = 'admin' or profesor_id = auth.uid() or asignatura_id in (select mis_asignaturas()));
 create policy evaluaciones_crear on evaluaciones for insert to authenticated
   with check (
     profesor_id = auth.uid()
-    and (mi_rol() = 'admin' or (mi_rol() = 'profesor' and enseno(curso_id, asignatura_id)))
+    and (mi_rol() = 'admin' or (mi_rol() = 'profesor' and enseno(asignatura_id)))
   );
 create policy evaluaciones_borrar on evaluaciones for delete to authenticated
   using (mi_rol() = 'admin' or profesor_id = auth.uid());

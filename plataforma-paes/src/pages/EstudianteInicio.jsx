@@ -8,18 +8,25 @@ import { Anillo, Aviso, Cargando, Evaluacion, Material } from '../components/ui'
 export default function EstudianteInicio() {
   const { perfil } = useAuth()
   const { data, error, loading } = useAsync(() =>
-    Promise.all([api.asignaciones.list(), api.materiales.list(), api.evaluaciones.list(), api.vistos.list()]),
+    Promise.all([
+      api.asignaturas.list(), api.matriculas.mias(), api.asignaciones.list(),
+      api.materiales.list(), api.evaluaciones.list(), api.vistos.list(),
+    ]),
   )
   if (loading) return <Cargando />
   if (error) return <Aviso>{error}</Aviso>
 
-  const [asignaciones, materiales, evaluaciones, vistos] = data
+  const [todas, mias, asignaciones, materiales, evaluaciones, vistos] = data
+  const misIds = new Set(mias)
   const vistosSet = new Set(vistos)
-  const filas = asignaciones.map((a) => {
-    const mats = materiales.filter((m) => m.asignatura_id === a.asignatura_id && m.curso_id === a.curso_id)
-    const v = mats.filter((m) => vistosSet.has(m.id)).length
-    return { ...a, total: mats.length, vistos: v, pct: mats.length ? Math.round((100 * v) / mats.length) : 0 }
-  })
+  const filas = todas
+    .filter((a) => misIds.has(a.id))
+    .map((a) => {
+      const mats = materiales.filter((m) => m.asignatura_id === a.id)
+      const v = mats.filter((m) => vistosSet.has(m.id)).length
+      const docentes = asignaciones.filter((x) => x.asignatura_id === a.id).map((x) => x.profesor.nombre)
+      return { ...a, docentes, total: mats.length, vistos: v, pct: mats.length ? Math.round((100 * v) / mats.length) : 0 }
+    })
   const total = filas.reduce((s, f) => s + f.total, 0)
   const totalVistos = filas.reduce((s, f) => s + f.vistos, 0)
   const pctGeneral = total ? Math.round((100 * totalVistos) / total) : 0
@@ -56,17 +63,17 @@ export default function EstudianteInicio() {
       <section>
         <h2>Mis asignaturas</h2>
         {filas.length === 0 ? (
-          <Aviso tipo="info">Todavía no estás inscrito en ninguna asignatura. Pide al administrador que te asigne a un curso.</Aviso>
+          <Aviso tipo="info">Todavía no estás inscrito en ninguna asignatura. Pide al administrador que te inscriba.</Aviso>
         ) : (
           <div className="asignaturas">
             {filas.map((f) => (
-              <Link key={f.id} to={`/asignatura/${f.id}`} className="asignatura" style={{ background: f.asignatura.color }}>
+              <Link key={f.id} to={`/asignatura/${f.id}`} className="asignatura" style={{ background: f.color }}>
                 <div>
-                  <h3>{f.asignatura.nombre}</h3>
-                  <small>{f.total} materiales · {f.profesor.nombre}</small>
+                  <h3>{f.nombre}</h3>
+                  <small>{f.total} {f.total === 1 ? 'material' : 'materiales'}</small>
                 </div>
                 <div className="fila-anillo">
-                  <small>Prof. {f.profesor.nombre.split(' ').slice(-1)}</small>
+                  <small>{f.docentes.length ? `Prof. ${f.docentes.join(', ')}` : 'Sin docente asignado'}</small>
                   <Anillo pct={f.pct} />
                 </div>
               </Link>

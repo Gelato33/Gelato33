@@ -2,26 +2,26 @@ import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { api } from '../data/api'
 import { useAsync } from '../lib/useAsync'
-import { ETIQUETA_EVALUACION, hoyISO } from '../lib/utils'
+import { ETIQUETA_EVALUACION, asignaturasUnicas, hoyISO } from '../lib/utils'
 import { Aviso, Cargando, Evaluacion } from '../components/ui'
 
-function FormEvaluacion({ asignaciones, onCreada }) {
-  const [asignacionId, setAsignacionId] = useState('')
+function FormEvaluacion({ asignaturas, onCreada }) {
+  const [asignaturaId, setAsignaturaId] = useState('')
   const [titulo, setTitulo] = useState('')
   const [tipo, setTipo] = useState('ensayo')
   const [fecha, setFecha] = useState('')
   const [detalle, setDetalle] = useState('')
   const [error, setError] = useState('')
-  const elegida = asignaciones.find((a) => a.id === (asignacionId || asignaciones[0]?.id))
+  const elegida = asignaturas.find((a) => a.id === asignaturaId) ?? asignaturas[0]
 
-  if (asignaciones.length === 0) return <Aviso tipo="info">No hay asignaturas asignadas para programar evaluaciones.</Aviso>
+  if (asignaturas.length === 0) return <Aviso tipo="info">No hay asignaturas asignadas para programar evaluaciones.</Aviso>
 
   const guardar = async (e) => {
     e.preventDefault()
     setError('')
     try {
       await api.evaluaciones.create({
-        curso_id: elegida.curso_id, asignatura_id: elegida.asignatura_id,
+        asignatura_id: elegida.id,
         titulo: titulo.trim(), tipo, fecha, detalle: detalle.trim() || null,
       })
       setTitulo('')
@@ -35,9 +35,9 @@ function FormEvaluacion({ asignaciones, onCreada }) {
   return (
     <form className="formulario" onSubmit={guardar}>
       <label>
-        Asignatura y curso
-        <select value={elegida?.id ?? ''} onChange={(e) => setAsignacionId(e.target.value)}>
-          {asignaciones.map((a) => <option key={a.id} value={a.id}>{a.asignatura.nombre} · {a.curso.nombre}</option>)}
+        Asignatura
+        <select value={elegida?.id ?? ''} onChange={(e) => setAsignaturaId(e.target.value)}>
+          {asignaturas.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
         </select>
       </label>
       <label>
@@ -101,7 +101,7 @@ export default function Evaluaciones() {
         {puedeCrear && (
           <section className="tarjeta">
             <h2>Programar evaluación</h2>
-            <FormEvaluacion asignaciones={asignaciones} onCreada={reload} />
+            <FormEvaluacion asignaturas={asignaturasUnicas(asignaciones)} onCreada={reload} />
           </section>
         )}
       </div>

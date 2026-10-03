@@ -194,3 +194,15 @@ td { padding: 11px 10px; border-top: 2px dashed var(--linea); white-space: nowra
 }
 .formulario textarea:focus { border-color: var(--ac); outline: none; }
 @media (max-width: 560px) { .clase { flex-direction: column; gap: 10px; } .clase .dia { width: 100%; height: auto; flex-direction: row; gap: 8px; padding: 8px; } .doble { grid-template-columns: 1fr; } }
+
+/* Selección de asignaturas y docentes */
+.grupo { border: 2px solid var(--linea); border-radius: 14px; padding: 10px 14px 12px; margin: 0; min-width: 0; }
+.grupo legend { font-weight: 800; font-size: 13.5px; padding: 0 6px; }
+.casillas { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 14px; margin-bottom: 8px; }
+.formulario .check { flex-direction: row; font-weight: 700; font-size: 14px; }
+.enlace { background: none; border: 0; padding: 0; color: var(--ac); font-weight: 800; cursor: pointer; text-decoration: underline; }
+.docentes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.docentes .tag button { background: none; border: 0; color: inherit; font-weight: 800; cursor: pointer; margin-left: 4px; padding: 0 2px; }
+td.botones .btn + .btn { margin-left: 6px; }
+tr.edicion td { white-space: normal; background: var(--fondo); border-radius: 14px; }
+tr.edicion .acciones { margin-top: 10px; }

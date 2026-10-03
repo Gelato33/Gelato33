@@ -5,9 +5,9 @@ const ok = ({ data, error }) => {
   return data
 }
 
-const SEL = '*, asignatura:asignaturas(nombre,color), profesor:profiles!profesor_id(nombre), curso:cursos(nombre)'
+const SEL = '*, asignatura:asignaturas(nombre,color), profesor:profiles!profesor_id(nombre)'
 const SEL_MAT = SEL + ', clase:clases(titulo)'
-const SEL_EVAL = '*, asignatura:asignaturas(nombre,color), curso:cursos(nombre)'
+const SEL_EVAL = '*, asignatura:asignaturas(nombre,color)'
 
 const idActual = async () => (await supabase.auth.getSession()).data.session.user.id
 
@@ -17,20 +17,19 @@ export const asignaturas = {
   remove: (id) => supabase.from('asignaturas').delete().eq('id', id).then(ok),
 }
 
-export const cursos = {
-  list: () => supabase.from('cursos').select('*').order('nombre').then(ok),
-  create: ({ nombre }) => supabase.from('cursos').insert({ nombre }).then(ok),
-}
-
 export const usuarios = {
   list: async (rol) => {
     const filas = await supabase
       .from('profiles')
-      .select('id,nombre,email,activo,matriculas(curso:cursos(nombre))')
+      .select('id,nombre,email,activo,matriculas(asignatura_id,asignatura:asignaturas(nombre))')
       .eq('rol', rol)
       .order('nombre')
       .then(ok)
-    return filas.map((f) => ({ ...f, curso: f.matriculas?.[0]?.curso?.nombre ?? null }))
+    return filas.map((f) => ({
+      ...f,
+      asignatura_ids: f.matriculas.map((m) => m.asignatura_id),
+      asignaturas: f.matriculas.map((m) => m.asignatura?.nombre).filter(Boolean),
+    }))
   },
   // La creación pasa por una Edge Function porque requiere la service role key.
   create: async (datos) => {
@@ -42,6 +41,18 @@ export const usuarios = {
     return data
   },
   setActivo: (id, activo) => supabase.from('profiles').update({ activo }).eq('id', id).then(ok),
+  // Reemplaza las asignaturas en que está inscrito un estudiante.
+  setAsignaturas: async (id, ids) => {
+    await supabase.from('matriculas').delete().eq('estudiante_id', id).then(ok)
+    if (ids.length) {
+      await supabase.from('matriculas').insert(ids.map((asignatura_id) => ({ asignatura_id, estudiante_id: id }))).then(ok)
+    }
+  },
+}
+
+export const matriculas = {
+  // Ids de las asignaturas del estudiante que inició sesión.
+  mias: async () => (await supabase.from('matriculas').select('asignatura_id').then(ok)).map((m) => m.asignatura_id),
 }
 
 export const asignaciones = {
@@ -52,8 +63,8 @@ export const asignaciones = {
 
 export const materiales = {
   list: () => supabase.from('materiales').select(SEL_MAT).order('created_at', { ascending: false }).then(ok),
-  create: async ({ curso_id, asignatura_id, clase_id, titulo, tipo, url, archivo }) => {
-    const fila = { curso_id, asignatura_id, clase_id: clase_id || null, titulo, tipo }
+  create: async ({ asignatura_id, clase_id, titulo, tipo, url, archivo }) => {
+    const fila = { asignatura_id, clase_id: clase_id || null, titulo, tipo }
     if (tipo === 'pdf') {
       const limpio = archivo.name.replace(/[^\w.-]+/g, '_')
       const ruta = `${await idActual()}/${crypto.randomUUID()}-${limpio}`

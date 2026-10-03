@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { api } from '../data/api'
 import { useAsync } from '../lib/useAsync'
-import { hoyISO } from '../lib/utils'
+import { asignaturasUnicas, hoyISO } from '../lib/utils'
 import { Aviso, Cargando, ClaseCard } from '../components/ui'
 
-// Sirve para crear y para editar. Al editar no se cambia la asignatura ni el curso.
-function FormClase({ asignaciones, editando, onListo, onCancelar }) {
-  const [asignacionId, setAsignacionId] = useState('')
+// Sirve para crear y para editar. Al editar no se cambia la asignatura.
+function FormClase({ asignaturas, editando, onListo, onCancelar }) {
+  const [asignaturaId, setAsignaturaId] = useState('')
   const [titulo, setTitulo] = useState(editando?.titulo ?? '')
   const [fecha, setFecha] = useState(editando?.fecha ?? '')
   const [hora, setHora] = useState(editando?.hora?.slice(0, 5) ?? '')
@@ -15,10 +15,10 @@ function FormClase({ asignaciones, editando, onListo, onCancelar }) {
   const [objetivos, setObjetivos] = useState(editando?.objetivos ?? '')
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
-  const elegida = asignaciones.find((a) => a.id === (asignacionId || asignaciones[0]?.id))
+  const elegida = asignaturas.find((a) => a.id === asignaturaId) ?? asignaturas[0]
 
-  if (!editando && asignaciones.length === 0) {
-    return <Aviso tipo="info">No hay asignaturas asignadas para crear clases. Pide al administrador que te asigne a un curso.</Aviso>
+  if (!editando && asignaturas.length === 0) {
+    return <Aviso tipo="info">No hay asignaturas asignadas para crear clases. Pide al administrador que te asigne a una asignatura.</Aviso>
   }
 
   const guardar = async (e) => {
@@ -34,7 +34,7 @@ function FormClase({ asignaciones, editando, onListo, onCancelar }) {
     }
     try {
       if (editando) await api.clases.update(editando.id, campos)
-      else await api.clases.create({ curso_id: elegida.curso_id, asignatura_id: elegida.asignatura_id, ...campos })
+      else await api.clases.create({ asignatura_id: elegida.id, ...campos })
       if (!editando) {
         setTitulo('')
         setContenido('')
@@ -51,12 +51,12 @@ function FormClase({ asignaciones, editando, onListo, onCancelar }) {
   return (
     <form className="formulario" onSubmit={guardar}>
       {editando ? (
-        <p className="sub">{editando.asignatura?.nombre} · {editando.curso?.nombre}</p>
+        <p className="sub">{editando.asignatura?.nombre}</p>
       ) : (
         <label>
-          Asignatura y curso
-          <select value={elegida?.id ?? ''} onChange={(e) => setAsignacionId(e.target.value)}>
-            {asignaciones.map((a) => <option key={a.id} value={a.id}>{a.asignatura.nombre} · {a.curso.nombre}</option>)}
+          Asignatura
+          <select value={elegida?.id ?? ''} onChange={(e) => setAsignaturaId(e.target.value)}>
+            {asignaturas.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
           </select>
         </label>
       )}
@@ -105,7 +105,7 @@ export default function Clases() {
 
   const [clases, materiales, asignaciones] = data
   const hoy = hoyISO()
-  const asignaturas = [...new Map(clases.map((c) => [c.asignatura_id, c.asignatura?.nombre])).entries()]
+  const asignaturasConClases = [...new Map(clases.map((c) => [c.asignatura_id, c.asignatura?.nombre])).entries()]
   const visibles = filtro ? clases.filter((c) => c.asignatura_id === filtro) : clases
   const proximas = visibles.filter((c) => c.fecha >= hoy)
   const realizadas = visibles.filter((c) => c.fecha < hoy).reverse()
@@ -134,12 +134,12 @@ export default function Clases() {
 
   const lista = (
     <div className="pila">
-      {asignaturas.length > 1 && (
+      {asignaturasConClases.length > 1 && (
         <div className="filtros">
           <label htmlFor="filtro-asignatura">Asignatura</label>
           <select id="filtro-asignatura" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
             <option value="">Todas</option>
-            {asignaturas.map(([id, nombre]) => <option key={id} value={id}>{nombre}</option>)}
+            {asignaturasConClases.map(([id, nombre]) => <option key={id} value={id}>{nombre}</option>)}
           </select>
         </div>
       )}
@@ -170,7 +170,7 @@ export default function Clases() {
             <h2>{editando ? 'Editar clase' : 'Nueva clase'}</h2>
             <FormClase
               key={editando?.id ?? 'nueva'}
-              asignaciones={asignaciones}
+              asignaturas={asignaturasUnicas(asignaciones)}
               editando={editando}
               onListo={() => {
                 setEditando(null)

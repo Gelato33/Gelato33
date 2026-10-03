@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { api } from '../data/api'
 import { useAsync } from '../lib/useAsync'
-import { ETIQUETA_TIPO, idYoutube, urlSegura } from '../lib/utils'
+import { ETIQUETA_TIPO, asignaturasUnicas, idYoutube, urlSegura } from '../lib/utils'
 import { Aviso, Cargando, Material } from '../components/ui'
 
 export default function ProfesorMateriales() {
   const { data, error, loading, reload } = useAsync(() => Promise.all([api.asignaciones.list(), api.materiales.list(), api.clases.list()]))
-  const [asignacionId, setAsignacionId] = useState('')
+  const [asignaturaId, setAsignaturaId] = useState('')
   const [titulo, setTitulo] = useState('')
   const [tipo, setTipo] = useState('youtube')
   const [url, setUrl] = useState('')
@@ -18,9 +18,9 @@ export default function ProfesorMateriales() {
   if (loading && !data) return <Cargando />
   if (error) return <Aviso>{error}</Aviso>
   const [asignaciones, materiales, clases] = data
-  const etiqueta = (a) => `${a.asignatura.nombre} · ${a.curso.nombre}`
-  const elegida = asignaciones.find((a) => a.id === (asignacionId || asignaciones[0]?.id))
-  const clasesDeLaAsignacion = clases.filter((c) => c.curso_id === elegida?.curso_id && c.asignatura_id === elegida?.asignatura_id)
+  const asignaturas = asignaturasUnicas(asignaciones)
+  const elegida = asignaturas.find((a) => a.id === asignaturaId) ?? asignaturas[0]
+  const clasesDeLaAsignacion = clases.filter((c) => c.asignatura_id === elegida?.id)
   const claseValida = clasesDeLaAsignacion.some((c) => c.id === claseId) ? claseId : ''
 
   const publicar = async (e) => {
@@ -33,8 +33,7 @@ export default function ProfesorMateriales() {
     setEnviando(true)
     try {
       await api.materiales.create({
-        curso_id: elegida.curso_id,
-        asignatura_id: elegida.asignatura_id,
+        asignatura_id: elegida.id,
         clase_id: claseValida || null,
         titulo: titulo.trim(),
         tipo,
@@ -67,19 +66,19 @@ export default function ProfesorMateriales() {
     <>
       <div>
         <h1>Mis materiales</h1>
-        <p className="sub">Sube PDFs, videos de YouTube o enlaces para tus cursos.</p>
+        <p className="sub">Sube PDFs, videos de YouTube o enlaces para tus asignaturas.</p>
       </div>
       <div className="dos">
         <section className="tarjeta">
           <h2>Nuevo material</h2>
-          {asignaciones.length === 0 ? (
-            <Aviso tipo="info">Aún no tienes asignaturas asignadas. Pide al administrador que te asigne a un curso.</Aviso>
+          {asignaturas.length === 0 ? (
+            <Aviso tipo="info">Aún no tienes asignaturas asignadas. Pide al administrador que te asigne a una asignatura.</Aviso>
           ) : (
             <form className="formulario" onSubmit={publicar}>
               <label>
-                Asignatura y curso
-                <select value={elegida?.id ?? ''} onChange={(e) => setAsignacionId(e.target.value)}>
-                  {asignaciones.map((a) => <option key={a.id} value={a.id}>{etiqueta(a)}</option>)}
+                Asignatura
+                <select value={elegida?.id ?? ''} onChange={(e) => setAsignaturaId(e.target.value)}>
+                  {asignaturas.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
                 </select>
               </label>
               <label>
@@ -118,7 +117,7 @@ export default function ProfesorMateriales() {
         <section className="tarjeta">
           <h2>Publicado ({materiales.length})</h2>
           {materiales.length ? (
-            <ul>{materiales.map((m) => <Material key={m.id} m={m} mostrarCurso onBorrar={() => borrar(m)} />)}</ul>
+            <ul>{materiales.map((m) => <Material key={m.id} m={m} onBorrar={() => borrar(m)} />)}</ul>
           ) : (
             <p className="vacio">Todavía no has publicado material.</p>
           )}

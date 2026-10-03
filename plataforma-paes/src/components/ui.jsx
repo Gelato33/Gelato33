@@ -33,7 +33,7 @@ export function Evaluacion({ e, onBorrar }) {
       <div>
         <b>{e.titulo}</b>
         <small>
-          {e.asignatura?.nombre} · {e.curso?.nombre}
+          {e.asignatura?.nombre}
           {e.detalle ? ` · ${e.detalle}` : ''}
         </small>
         <div className="fila-tag">
@@ -71,7 +71,7 @@ export function BotonBorrar({ onConfirmar, texto = 'Eliminar', aviso = '¿Seguro
   )
 }
 
-export function Material({ m, visto, onVisto, onBorrar, mostrarCurso }) {
+export function Material({ m, visto, onVisto, onBorrar }) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState('')
   const yt = m.tipo === 'youtube' ? idYoutube(m.url) : null
@@ -99,8 +99,7 @@ export function Material({ m, visto, onVisto, onBorrar, mostrarCurso }) {
         <div className="cuerpo">
           <b>{m.titulo}</b>
           <small>
-            {m.asignatura?.nombre}
-            {mostrarCurso ? ` · ${m.curso?.nombre}` : ''} · Prof. {m.profesor?.nombre}
+            {m.asignatura?.nombre} · Prof. {m.profesor?.nombre}
           </small>
           {m.clase && <small>Clase: {m.clase.titulo}</small>}
           <div className="acciones">
@@ -153,7 +152,7 @@ export function ClaseCard({ c, materiales = [], onEditar, onBorrar, hoy }) {
       <div className="cuerpo">
         <h3>{c.titulo}</h3>
         <small>
-          {c.asignatura?.nombre} · {c.curso?.nombre} · <span className="cap">{fechaLarga(c.fecha)}</span>
+          {c.asignatura?.nombre} · <span className="cap">{fechaLarga(c.fecha)}</span>
           {c.hora ? ` · ${c.hora.slice(0, 5)} h` : ''} · Prof. {c.profesor?.nombre}
         </small>
         {c.contenido && (

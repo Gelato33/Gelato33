@@ -1,28 +1,33 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../data/api'
 import { useAsync } from '../lib/useAsync'
-import { Aviso, Cargando, ClaseCard, Evaluacion, Material } from '../components/ui'
 import { hoyISO } from '../lib/utils'
-import { useState } from 'react'
+import { Aviso, Cargando, ClaseCard, Evaluacion, Material } from '../components/ui'
 
 export default function Asignatura() {
   const { id } = useParams()
   const [errorAccion, setErrorAccion] = useState('')
   const { data, error, loading, reload } = useAsync(
-    () => Promise.all([api.asignaciones.list(), api.materiales.list(), api.evaluaciones.list(), api.vistos.list(), api.clases.list()]),
+    () =>
+      Promise.all([
+        api.asignaturas.list(), api.matriculas.mias(), api.asignaciones.list(),
+        api.materiales.list(), api.evaluaciones.list(), api.vistos.list(), api.clases.list(),
+      ]),
     [id],
   )
   if (loading && !data) return <Cargando />
   if (error) return <Aviso>{error}</Aviso>
 
-  const [asignaciones, materiales, evaluaciones, vistos, clases] = data
-  const a = asignaciones.find((x) => x.id === id)
-  if (!a) return <Aviso>No encontramos esta asignatura. <Link to="/">Volver al inicio</Link></Aviso>
+  const [todas, mias, asignaciones, materiales, evaluaciones, vistos, clases] = data
+  const a = todas.find((x) => x.id === id)
+  if (!a || !mias.includes(id)) return <Aviso>No encontramos esta asignatura. <Link to="/">Volver al inicio</Link></Aviso>
 
-  const mats = materiales.filter((m) => m.asignatura_id === a.asignatura_id && m.curso_id === a.curso_id)
-  const evals = evaluaciones.filter((e) => e.asignatura_id === a.asignatura_id && e.curso_id === a.curso_id)
+  const docentes = asignaciones.filter((x) => x.asignatura_id === id).map((x) => x.profesor.nombre)
+  const mats = materiales.filter((m) => m.asignatura_id === id)
+  const evals = evaluaciones.filter((e) => e.asignatura_id === id)
+  const clasesA = clases.filter((c) => c.asignatura_id === id)
   const vistosSet = new Set(vistos)
-  const clasesA = clases.filter((c) => c.asignatura_id === a.asignatura_id && c.curso_id === a.curso_id)
 
   const marcar = async (materialId, visto) => {
     setErrorAccion('')
@@ -38,8 +43,8 @@ export default function Asignatura() {
     <>
       <div>
         <Link to="/" className="volver">← Volver al inicio</Link>
-        <h1 style={{ color: a.asignatura.color }}>{a.asignatura.nombre}</h1>
-        <p className="sub">{a.curso.nombre} · Prof. {a.profesor.nombre}</p>
+        <h1 style={{ color: a.color }}>{a.nombre}</h1>
+        <p className="sub">{docentes.length ? `Prof. ${docentes.join(', ')}` : 'Sin docente asignado'}</p>
       </div>
       {errorAccion && <Aviso>{errorAccion}</Aviso>}
       <section className="tarjeta">

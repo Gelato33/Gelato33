@@ -17,7 +17,6 @@ const MENU = {
     { a: '/admin/estudiantes', t: 'Estudiantes' },
     { a: '/admin/docentes', t: 'Docentes' },
     { a: '/admin/asignaturas', t: 'Asignaturas' },
-    { a: '/admin/cursos', t: 'Cursos' },
     { a: '/clases', t: 'Clases' },
     { a: '/evaluaciones', t: 'Evaluaciones' },
   ],

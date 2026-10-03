@@ -38,3 +38,12 @@ export const hoyISO = () => new Date().toISOString().slice(0, 10)
 
 export const ETIQUETA_EVALUACION = { ensayo: 'Ensayo', control: 'Control', tecnico: 'Liceo técnico' }
 export const ETIQUETA_TIPO = { pdf: 'PDF', youtube: 'Video de YouTube', enlace: 'Enlace' }
+
+// Asignaturas distintas que aparecen en una lista de asignaciones (docente-asignatura).
+export function asignaturasUnicas(asignaciones) {
+  const mapa = new Map()
+  for (const a of asignaciones) {
+    if (!mapa.has(a.asignatura_id)) mapa.set(a.asignatura_id, { id: a.asignatura_id, nombre: a.asignatura.nombre, color: a.asignatura.color })
+  }
+  return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre))
+}
