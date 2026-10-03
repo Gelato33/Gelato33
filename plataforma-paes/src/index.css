@@ -221,3 +221,12 @@ td.correo { overflow-wrap: anywhere; }
 tr.activa td { background: #efeaff; }
 .panel-edicion { margin-top: 16px; padding: 14px; border-radius: 18px; background: var(--fondo); }
 .panel-edicion .acciones { margin-top: 12px; }
+
+/* Buscador de listas */
+.buscador { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 10px; }
+.buscador input {
+  flex: 1 1 240px; min-width: 0; border: 2px solid var(--linea); background: #fff; color: var(--tinta);
+  border-radius: 99px; padding: 10px 16px; font-weight: 600;
+}
+.buscador input:focus { border-color: var(--ac); outline: none; }
+.buscador small { color: var(--suave); font-weight: 700; }

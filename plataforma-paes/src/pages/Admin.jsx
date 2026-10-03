@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { api } from '../data/api'
 import { useAsync } from '../lib/useAsync'
 import { marca } from '../lib/marca'
+import { normalizar } from '../lib/utils'
 import { Aviso, BotonBorrar, Cargando } from '../components/ui'
 
 // Ejecuta una acción y muestra el error en pantalla si falla.
@@ -82,6 +83,7 @@ function Usuarios({ rol }) {
   const [seleccion, setSeleccion] = useState([])
   const [enviando, setEnviando] = useState(false)
   const [editando, setEditando] = useState(null) // { id, ids }
+  const [busqueda, setBusqueda] = useState('')
 
   if (loading && !data) return <Cargando />
   if (error) return <Aviso>{error}</Aviso>
@@ -89,6 +91,14 @@ function Usuarios({ rol }) {
   const activos = lista.filter((u) => u.activo).length
   const lleno = esEstudiante && activos >= marca.maxEstudiantes
   const elegidas = seleccion
+  // Cada palabra escrita debe aparecer en el nombre, el correo o las asignaturas.
+  const palabras = normalizar(busqueda).split(/\s+/).filter(Boolean)
+  const visibles = palabras.length
+    ? lista.filter((u) => {
+        const texto = normalizar(`${u.nombre} ${u.email} ${u.asignaturas.join(' ')}`)
+        return palabras.every((p) => texto.includes(p))
+      })
+    : lista
 
   const crear = async (e) => {
     e.preventDefault()
@@ -112,13 +122,23 @@ function Usuarios({ rol }) {
     <div className="dos">
       <section className="tarjeta">
         <h2>{esEstudiante ? `Estudiantes (${activos} de ${marca.maxEstudiantes} cupos)` : `Docentes (${lista.length})`}</h2>
+        <div className="buscador">
+          <input
+            type="search"
+            aria-label={`Buscar ${esEstudiante ? 'estudiantes' : 'docentes'}`}
+            placeholder="Buscar por nombre, correo o asignatura"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          {palabras.length > 0 && <small aria-live="polite">Mostrando {visibles.length} de {lista.length}</small>}
+        </div>
         <div className="tabla">
           <table>
             <thead>
               <tr><th>Nombre</th><th>Correo</th><th>Asignaturas</th><th>Estado</th><th /></tr>
             </thead>
             <tbody>
-              {lista.map((u) => (
+              {visibles.map((u) => (
                 <FilaUsuario
                   key={u.id}
                   u={u}
@@ -133,6 +153,11 @@ function Usuarios({ rol }) {
           </table>
         </div>
         {lista.length === 0 && <p className="vacio">Aún no hay {esEstudiante ? 'estudiantes' : 'docentes'}.</p>}
+        {lista.length > 0 && visibles.length === 0 && (
+          <p className="vacio">
+            Ningún resultado para «{busqueda.trim()}». <button type="button" className="enlace" onClick={() => setBusqueda('')}>Limpiar búsqueda</button>
+          </p>
+        )}
         {editando && (
           <div className="panel-edicion">
             <SelectorAsignaturas

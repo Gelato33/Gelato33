@@ -47,3 +47,6 @@ export function asignaturasUnicas(asignaciones) {
   }
   return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre))
 }
+
+// Para buscar sin importar mayúsculas ni tildes ("jose" encuentra "José").
+export const normalizar = (texto = '') => texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
