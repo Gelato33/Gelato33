@@ -1,0 +1,196 @@
+-- Esquema de la plataforma PAES.
+-- Ejecutar completo en Supabase > SQL Editor (una sola vez por institución).
+
+create extension if not exists pgcrypto;
+
+-- ───────────── Tablas ─────────────
+
+create type rol_usuario as enum ('admin', 'profesor', 'estudiante');
+create type tipo_material as enum ('pdf', 'youtube', 'enlace');
+create type tipo_evaluacion as enum ('ensayo', 'control', 'tecnico');
+
+create table profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  nombre text not null,
+  email text not null,
+  rol rol_usuario not null,
+  activo boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create table asignaturas (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null unique,
+  color text not null default '#5b3df5',
+  activa boolean not null default true
+);
+
+create table cursos (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null unique
+);
+
+create table matriculas (
+  curso_id uuid not null references cursos (id) on delete cascade,
+  estudiante_id uuid not null references profiles (id) on delete cascade,
+  primary key (curso_id, estudiante_id)
+);
+
+-- Qué profesor enseña qué asignatura en qué curso.
+create table asignaciones (
+  id uuid primary key default gen_random_uuid(),
+  curso_id uuid not null references cursos (id) on delete cascade,
+  asignatura_id uuid not null references asignaturas (id) on delete cascade,
+  profesor_id uuid not null references profiles (id) on delete cascade,
+  unique (curso_id, asignatura_id)
+);
+
+create table materiales (
+  id uuid primary key default gen_random_uuid(),
+  curso_id uuid not null references cursos (id) on delete cascade,
+  asignatura_id uuid not null references asignaturas (id) on delete cascade,
+  profesor_id uuid not null default auth.uid() references profiles (id) on delete cascade,
+  titulo text not null,
+  tipo tipo_material not null,
+  url text,
+  storage_path text,
+  created_at timestamptz not null default now(),
+  check (url is not null or storage_path is not null)
+);
+
+create table evaluaciones (
+  id uuid primary key default gen_random_uuid(),
+  curso_id uuid not null references cursos (id) on delete cascade,
+  asignatura_id uuid not null references asignaturas (id) on delete cascade,
+  profesor_id uuid not null default auth.uid() references profiles (id) on delete cascade,
+  titulo text not null,
+  tipo tipo_evaluacion not null,
+  fecha date not null,
+  detalle text
+);
+
+create table vistos (
+  estudiante_id uuid not null default auth.uid() references profiles (id) on delete cascade,
+  material_id uuid not null references materiales (id) on delete cascade,
+  primary key (estudiante_id, material_id)
+);
+
+create index on matriculas (estudiante_id);
+create index on asignaciones (profesor_id);
+create index on materiales (curso_id, asignatura_id);
+create index on evaluaciones (curso_id, fecha);
+
+-- ───────────── Funciones auxiliares ─────────────
+-- security definer evita recursión entre políticas.
+
+create function mi_rol() returns rol_usuario
+language sql stable security definer set search_path = public as $$
+  select rol from profiles where id = auth.uid() and activo
+$$;
+
+create function mis_cursos() returns setof uuid
+language sql stable security definer set search_path = public as $$
+  select curso_id from matriculas where estudiante_id = auth.uid()
+$$;
+
+create function enseno(p_curso uuid, p_asignatura uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from asignaciones
+    where curso_id = p_curso and asignatura_id = p_asignatura and profesor_id = auth.uid()
+  )
+$$;
+
+-- ───────────── Seguridad por filas (RLS) ─────────────
+
+alter table profiles enable row level security;
+alter table asignaturas enable row level security;
+alter table cursos enable row level security;
+alter table matriculas enable row level security;
+alter table asignaciones enable row level security;
+alter table materiales enable row level security;
+alter table evaluaciones enable row level security;
+alter table vistos enable row level security;
+
+-- profiles: cada uno ve su perfil; todos ven nombres de docentes y admin; el admin ve y edita todo.
+create policy profiles_leer on profiles for select to authenticated
+  using (id = auth.uid() or mi_rol() = 'admin' or rol in ('profesor', 'admin'));
+create policy profiles_admin on profiles for all to authenticated
+  using (mi_rol() = 'admin') with check (mi_rol() = 'admin');
+
+create policy asignaturas_leer on asignaturas for select to authenticated using (mi_rol() is not null);
+create policy asignaturas_admin on asignaturas for all to authenticated
+  using (mi_rol() = 'admin') with check (mi_rol() = 'admin');
+
+create policy cursos_leer on cursos for select to authenticated using (mi_rol() is not null);
+create policy cursos_admin on cursos for all to authenticated
+  using (mi_rol() = 'admin') with check (mi_rol() = 'admin');
+
+create policy matriculas_leer on matriculas for select to authenticated
+  using (estudiante_id = auth.uid() or mi_rol() = 'admin');
+create policy matriculas_admin on matriculas for all to authenticated
+  using (mi_rol() = 'admin') with check (mi_rol() = 'admin');
+
+create policy asignaciones_leer on asignaciones for select to authenticated
+  using (mi_rol() = 'admin' or profesor_id = auth.uid() or curso_id in (select mis_cursos()));
+create policy asignaciones_admin on asignaciones for all to authenticated
+  using (mi_rol() = 'admin') with check (mi_rol() = 'admin');
+
+-- materiales: estudiantes ven los de sus cursos; cada profesor gestiona los suyos.
+create policy materiales_leer on materiales for select to authenticated
+  using (mi_rol() = 'admin' or profesor_id = auth.uid() or curso_id in (select mis_cursos()));
+create policy materiales_crear on materiales for insert to authenticated
+  with check (
+    profesor_id = auth.uid()
+    and (mi_rol() = 'admin' or (mi_rol() = 'profesor' and enseno(curso_id, asignatura_id)))
+  );
+create policy materiales_borrar on materiales for delete to authenticated
+  using (mi_rol() = 'admin' or profesor_id = auth.uid());
+
+create policy evaluaciones_leer on evaluaciones for select to authenticated
+  using (mi_rol() = 'admin' or profesor_id = auth.uid() or curso_id in (select mis_cursos()));
+create policy evaluaciones_crear on evaluaciones for insert to authenticated
+  with check (
+    profesor_id = auth.uid()
+    and (mi_rol() = 'admin' or (mi_rol() = 'profesor' and enseno(curso_id, asignatura_id)))
+  );
+create policy evaluaciones_borrar on evaluaciones for delete to authenticated
+  using (mi_rol() = 'admin' or profesor_id = auth.uid());
+
+-- vistos: cada estudiante maneja solo su avance.
+create policy vistos_propios on vistos for all to authenticated
+  using (estudiante_id = auth.uid()) with check (estudiante_id = auth.uid());
+
+-- ───────────── Almacenamiento de PDFs ─────────────
+
+insert into storage.buckets (id, name, public) values ('materiales', 'materiales', false)
+on conflict (id) do nothing;
+
+-- Subir: solo docentes/admin, dentro de su carpeta (<id_usuario>/archivo.pdf).
+create policy storage_subir on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'materiales'
+    and mi_rol() in ('admin', 'profesor')
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- Leer: solo si el usuario puede ver el material que referencia ese archivo.
+create policy storage_leer on storage.objects for select to authenticated
+  using (
+    bucket_id = 'materiales'
+    and exists (select 1 from public.materiales m where m.storage_path = name)
+  );
+
+create policy storage_borrar on storage.objects for delete to authenticated
+  using (bucket_id = 'materiales' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ───────────── Datos iniciales ─────────────
+
+insert into asignaturas (nombre, color) values
+  ('Matemática M1', '#2f6fed'),
+  ('Competencia Lectora', '#d9443c'),
+  ('Historia y Cs. Sociales', '#b87400'),
+  ('Ciencias · Biología', '#16875c'),
+  ('Ciencias · Física', '#7447d1'),
+  ('Ciencias · Química', '#cc3d85')
+on conflict (nombre) do nothing;
