@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { fechaCorta, idYoutube, urlSegura, ETIQUETA_EVALUACION } from '../lib/utils'
+import { fechaCorta, fechaLarga, idYoutube, urlSegura, ETIQUETA_EVALUACION } from '../lib/utils'
 import { api } from '../data/api'
 
 export const Cargando = () => <p className="estado">Cargando…</p>
@@ -102,6 +102,7 @@ export function Material({ m, visto, onVisto, onBorrar, mostrarCurso }) {
             {m.asignatura?.nombre}
             {mostrarCurso ? ` · ${m.curso?.nombre}` : ''} · Prof. {m.profesor?.nombre}
           </small>
+          {m.clase && <small>Clase: {m.clase.titulo}</small>}
           <div className="acciones">
             {m.tipo === 'youtube' && (
               yt ? (
@@ -135,6 +136,50 @@ export function Material({ m, visto, onVisto, onBorrar, mostrarCurso }) {
             </div>
           )}
         </div>
+      </div>
+    </li>
+  )
+}
+
+export function ClaseCard({ c, materiales = [], onEditar, onBorrar, hoy }) {
+  const [dia, mes] = fechaCorta(c.fecha).split(' ')
+  const pasada = c.fecha < hoy
+  return (
+    <li className={`clase${pasada ? ' pasada' : ''}`}>
+      <div className="dia" aria-hidden="true">
+        <b>{dia}</b>
+        <span>{mes}</span>
+      </div>
+      <div className="cuerpo">
+        <h3>{c.titulo}</h3>
+        <small>
+          {c.asignatura?.nombre} · {c.curso?.nombre} · <span className="cap">{fechaLarga(c.fecha)}</span>
+          {c.hora ? ` · ${c.hora.slice(0, 5)} h` : ''} · Prof. {c.profesor?.nombre}
+        </small>
+        {c.contenido && (
+          <div className="bloque">
+            <h4>Contenidos</h4>
+            <p className="texto">{c.contenido}</p>
+          </div>
+        )}
+        {c.objetivos && (
+          <div className="bloque">
+            <h4>Objetivos</h4>
+            <p className="texto">{c.objetivos}</p>
+          </div>
+        )}
+        {materiales.length > 0 && (
+          <details className="material-clase">
+            <summary>Material de la clase ({materiales.length})</summary>
+            <ul>{materiales.map((m) => <Material key={m.id} m={m} />)}</ul>
+          </details>
+        )}
+        {(onEditar || onBorrar) && (
+          <div className="acciones">
+            {onEditar && <button type="button" className="btn sec" onClick={onEditar}>Editar</button>}
+            {onBorrar && <BotonBorrar onConfirmar={onBorrar} aviso="El material queda sin clase." />}
+          </div>
+        )}
       </div>
     </li>
   )

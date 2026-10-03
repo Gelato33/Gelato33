@@ -39,10 +39,16 @@ export const db = {
   ],
   asignaciones: [],
   materiales: [
-    { id: 'm1', curso_id: 'c1', asignatura_id: 'a1', profesor_id: 'u-p1', titulo: 'Funciones lineales y afines', tipo: 'youtube', url: VIDEO_EJEMPLO, created_at: dia(-1) },
-    { id: 'm2', curso_id: 'c1', asignatura_id: 'a1', profesor_id: 'u-p1', titulo: 'Guía 4: ecuaciones cuadráticas', tipo: 'pdf', url: null, storage_path: 'demo', created_at: dia(-2) },
+    { id: 'm1', curso_id: 'c1', asignatura_id: 'a1', profesor_id: 'u-p1', clase_id: 'k1', titulo: 'Funciones lineales y afines', tipo: 'youtube', url: VIDEO_EJEMPLO, created_at: dia(-1) },
+    { id: 'm2', curso_id: 'c1', asignatura_id: 'a1', profesor_id: 'u-p1', clase_id: 'k2', titulo: 'Guía 4: ecuaciones cuadráticas', tipo: 'pdf', url: null, storage_path: 'demo', created_at: dia(-2) },
     { id: 'm3', curso_id: 'c1', asignatura_id: 'a3', profesor_id: 'u-p3', titulo: 'Línea de tiempo del siglo XX en Chile', tipo: 'enlace', url: 'https://www.memoriachilena.gob.cl', created_at: dia(-3) },
-    { id: 'm4', curso_id: 'c1', asignatura_id: 'a4', profesor_id: 'u-p4', titulo: 'Mitosis y meiosis explicadas', tipo: 'youtube', url: VIDEO_EJEMPLO, created_at: dia(-4) },
+    { id: 'm4', curso_id: 'c1', asignatura_id: 'a4', profesor_id: 'u-p4', clase_id: 'k4', titulo: 'Mitosis y meiosis explicadas', tipo: 'youtube', url: VIDEO_EJEMPLO, created_at: dia(-4) },
+  ],
+  clases: [
+    { id: 'k1', curso_id: 'c1', asignatura_id: 'a1', profesor_id: 'u-p1', titulo: 'Funciones lineales y afines', fecha: dia(-5), hora: '18:00', contenido: 'Concepto de función. Función lineal y afín: pendiente e intercepto.\nGráficos y tablas de valores.', objetivos: 'Reconocer y graficar funciones lineales y afines.' },
+    { id: 'k2', curso_id: 'c1', asignatura_id: 'a1', profesor_id: 'u-p1', titulo: 'Ecuaciones cuadráticas', fecha: dia(2), hora: '18:00', contenido: 'Resolución por factorización y fórmula general.\nDiscriminante y tipos de soluciones.', objetivos: 'Resolver ecuaciones cuadráticas con distintos métodos.' },
+    { id: 'k3', curso_id: 'c1', asignatura_id: 'a3', profesor_id: 'u-p3', titulo: 'Chile en el siglo XX: crisis del parlamentarismo', fecha: dia(3), hora: '19:30', contenido: 'Cuestión social, Constitución de 1925 y rol de las Fuerzas Armadas.', objetivos: null },
+    { id: 'k4', curso_id: 'c1', asignatura_id: 'a4', profesor_id: 'u-p4', titulo: 'División celular: mitosis y meiosis', fecha: dia(4), hora: '17:00', contenido: 'Fases de la mitosis y la meiosis.\nComparación y variabilidad genética.', objetivos: 'Diferenciar mitosis y meiosis.' },
   ],
   evaluaciones: [
     { id: 'e1', curso_id: 'c1', asignatura_id: 'a1', profesor_id: 'u-p1', titulo: 'Ensayo PAES Matemática M1', tipo: 'ensayo', fecha: dia(6), detalle: '65 preguntas · 140 minutos' },
@@ -79,6 +85,7 @@ const conRelaciones = (m) => ({
   asignatura: { nombre: asig(m.asignatura_id)?.nombre, color: asig(m.asignatura_id)?.color },
   profesor: { nombre: persona(m.profesor_id)?.nombre },
   curso: { nombre: curso(m.curso_id)?.nombre },
+  clase: m.clase_id ? { titulo: db.clases.find((c) => c.id === m.clase_id)?.titulo } : null,
 })
 
 export const asignaturas = {
@@ -87,7 +94,7 @@ export const asignaturas = {
     db.asignaturas.push({ id: nuevoId(), nombre, color, activa: true })
   },
   remove: async (id) => {
-    for (const tabla of ['asignaciones', 'materiales', 'evaluaciones']) {
+    for (const tabla of ['asignaciones', 'materiales', 'evaluaciones', 'clases']) {
       db[tabla] = db[tabla].filter((f) => f.asignatura_id !== id)
     }
     db.asignaturas = db.asignaturas.filter((a) => a.id !== id)
@@ -138,8 +145,8 @@ export const asignaciones = {
 
 export const materiales = {
   list: () => esperar(db.materiales.filter(visible).sort((a, b) => b.created_at.localeCompare(a.created_at)).map(conRelaciones)),
-  create: async ({ curso_id, asignatura_id, titulo, tipo, url, archivo }) => {
-    const fila = { id: nuevoId(), curso_id, asignatura_id, profesor_id: yo().id, titulo, tipo, created_at: new Date().toISOString().slice(0, 10) }
+  create: async ({ curso_id, asignatura_id, clase_id, titulo, tipo, url, archivo }) => {
+    const fila = { id: nuevoId(), curso_id, asignatura_id, clase_id: clase_id || null, profesor_id: yo().id, titulo, tipo, created_at: new Date().toISOString().slice(0, 10) }
     if (tipo === 'pdf') {
       fila.url = null
       fila.storage_path = URL.createObjectURL(archivo)
@@ -150,6 +157,20 @@ export const materiales = {
     db.materiales = db.materiales.filter((x) => x.id !== m.id)
   },
   abrir: async (m) => (m.storage_path === 'demo' ? null : (m.storage_path ?? m.url)),
+}
+
+export const clases = {
+  list: () => esperar(db.clases.filter(visible).sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? '')).map(conRelaciones)),
+  create: async (c) => {
+    db.clases.push({ id: nuevoId(), profesor_id: yo().id, ...c })
+  },
+  update: async (id, campos) => {
+    Object.assign(db.clases.find((c) => c.id === id), campos)
+  },
+  remove: async (id) => {
+    db.clases = db.clases.filter((c) => c.id !== id)
+    for (const m of db.materiales) if (m.clase_id === id) m.clase_id = null
+  },
 }
 
 export const evaluaciones = {

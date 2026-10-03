@@ -164,3 +164,33 @@ td { padding: 11px 10px; border-top: 2px dashed var(--linea); white-space: nowra
 @media (prefers-reduced-motion: reduce) {
   .asignatura { transition: none; }
 }
+
+/* Clases (sesiones) */
+.clases { display: flex; flex-direction: column; gap: 14px; }
+.clase { display: flex; gap: 16px; padding: 16px; border-radius: 18px; background: var(--fondo); }
+.clase.pasada { opacity: 0.82; }
+.clase h3 { margin-bottom: 2px; }
+.clase small { color: var(--suave); font-weight: 600; display: block; }
+.clase .dia {
+  flex: none; width: 62px; height: 70px; border-radius: 16px; background: var(--ac); color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1;
+}
+.clase.pasada .dia { background: var(--suave); }
+.clase .dia b { font-family: var(--display); font-size: 26px; font-variant-numeric: tabular-nums; }
+.clase .dia span { font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+.clase .bloque { margin-top: 10px; }
+.clase h4 { margin: 0 0 2px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--suave); font-weight: 800; }
+.texto { white-space: pre-line; font-weight: 600; }
+.cap::first-letter { text-transform: uppercase; }
+.material-clase { margin-top: 12px; background: #fff; border-radius: 14px; padding: 4px 14px; }
+.material-clase summary { cursor: pointer; font-weight: 800; padding: 8px 0; color: var(--ac); }
+.material-clase ul { padding-bottom: 6px; }
+.filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; font-weight: 800; }
+.filtros select { border: 2px solid var(--linea); border-radius: 14px; padding: 8px 12px; background: #fff; color: var(--tinta); font-weight: 600; }
+.doble { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.formulario textarea {
+  border: 2px solid var(--linea); background: #fff; color: var(--tinta); border-radius: 14px;
+  padding: 10px 12px; width: 100%; min-width: 0; font: inherit; font-weight: 600; resize: vertical; min-height: 96px;
+}
+.formulario textarea:focus { border-color: var(--ac); outline: none; }
+@media (max-width: 560px) { .clase { flex-direction: column; gap: 10px; } .clase .dia { width: 100%; height: auto; flex-direction: row; gap: 8px; padding: 8px; } .doble { grid-template-columns: 1fr; } }

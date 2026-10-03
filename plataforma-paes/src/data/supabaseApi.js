@@ -6,6 +6,7 @@ const ok = ({ data, error }) => {
 }
 
 const SEL = '*, asignatura:asignaturas(nombre,color), profesor:profiles!profesor_id(nombre), curso:cursos(nombre)'
+const SEL_MAT = SEL + ', clase:clases(titulo)'
 const SEL_EVAL = '*, asignatura:asignaturas(nombre,color), curso:cursos(nombre)'
 
 const idActual = async () => (await supabase.auth.getSession()).data.session.user.id
@@ -50,9 +51,9 @@ export const asignaciones = {
 }
 
 export const materiales = {
-  list: () => supabase.from('materiales').select(SEL).order('created_at', { ascending: false }).then(ok),
-  create: async ({ curso_id, asignatura_id, titulo, tipo, url, archivo }) => {
-    const fila = { curso_id, asignatura_id, titulo, tipo }
+  list: () => supabase.from('materiales').select(SEL_MAT).order('created_at', { ascending: false }).then(ok),
+  create: async ({ curso_id, asignatura_id, clase_id, titulo, tipo, url, archivo }) => {
+    const fila = { curso_id, asignatura_id, clase_id: clase_id || null, titulo, tipo }
     if (tipo === 'pdf') {
       const limpio = archivo.name.replace(/[^\w.-]+/g, '_')
       const ruta = `${await idActual()}/${crypto.randomUUID()}-${limpio}`
@@ -75,6 +76,13 @@ export const materiales = {
     if (error) throw new Error(error.message)
     return data.signedUrl
   },
+}
+
+export const clases = {
+  list: () => supabase.from('clases').select(SEL).order('fecha').order('hora').then(ok),
+  create: (c) => supabase.from('clases').insert(c).then(ok),
+  update: (id, campos) => supabase.from('clases').update(campos).eq('id', id).then(ok),
+  remove: (id) => supabase.from('clases').delete().eq('id', id).then(ok),
 }
 
 export const evaluaciones = {

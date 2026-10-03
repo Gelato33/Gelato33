@@ -30,6 +30,10 @@ export function fechaCorta(iso) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }).replace('.', '')
 }
 
+export function fechaLarga(iso) {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })
+}
+
 export const hoyISO = () => new Date().toISOString().slice(0, 10)
 
 export const ETIQUETA_EVALUACION = { ensayo: 'Ensayo', control: 'Control', tecnico: 'Liceo técnico' }

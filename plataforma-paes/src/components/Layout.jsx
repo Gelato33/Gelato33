@@ -5,10 +5,12 @@ import { marca } from '../lib/marca'
 const MENU = {
   estudiante: [
     { a: '/', t: 'Inicio', fin: true },
+    { a: '/clases', t: 'Clases' },
     { a: '/evaluaciones', t: 'Evaluaciones' },
   ],
   profesor: [
     { a: '/', t: 'Materiales', fin: true },
+    { a: '/clases', t: 'Clases' },
     { a: '/evaluaciones', t: 'Evaluaciones' },
   ],
   admin: [
@@ -16,6 +18,7 @@ const MENU = {
     { a: '/admin/docentes', t: 'Docentes' },
     { a: '/admin/asignaturas', t: 'Asignaturas' },
     { a: '/admin/cursos', t: 'Cursos' },
+    { a: '/clases', t: 'Clases' },
     { a: '/evaluaciones', t: 'Evaluaciones' },
   ],
 }

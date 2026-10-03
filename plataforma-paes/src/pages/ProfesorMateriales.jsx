@@ -5,20 +5,23 @@ import { ETIQUETA_TIPO, idYoutube, urlSegura } from '../lib/utils'
 import { Aviso, Cargando, Material } from '../components/ui'
 
 export default function ProfesorMateriales() {
-  const { data, error, loading, reload } = useAsync(() => Promise.all([api.asignaciones.list(), api.materiales.list()]))
+  const { data, error, loading, reload } = useAsync(() => Promise.all([api.asignaciones.list(), api.materiales.list(), api.clases.list()]))
   const [asignacionId, setAsignacionId] = useState('')
   const [titulo, setTitulo] = useState('')
   const [tipo, setTipo] = useState('youtube')
   const [url, setUrl] = useState('')
   const [archivo, setArchivo] = useState(null)
+  const [claseId, setClaseId] = useState('')
   const [msg, setMsg] = useState(null)
   const [enviando, setEnviando] = useState(false)
 
   if (loading && !data) return <Cargando />
   if (error) return <Aviso>{error}</Aviso>
-  const [asignaciones, materiales] = data
+  const [asignaciones, materiales, clases] = data
   const etiqueta = (a) => `${a.asignatura.nombre} · ${a.curso.nombre}`
   const elegida = asignaciones.find((a) => a.id === (asignacionId || asignaciones[0]?.id))
+  const clasesDeLaAsignacion = clases.filter((c) => c.curso_id === elegida?.curso_id && c.asignatura_id === elegida?.asignatura_id)
+  const claseValida = clasesDeLaAsignacion.some((c) => c.id === claseId) ? claseId : ''
 
   const publicar = async (e) => {
     e.preventDefault()
@@ -32,6 +35,7 @@ export default function ProfesorMateriales() {
       await api.materiales.create({
         curso_id: elegida.curso_id,
         asignatura_id: elegida.asignatura_id,
+        clase_id: claseValida || null,
         titulo: titulo.trim(),
         tipo,
         url: tipo === 'pdf' ? null : (tipo === 'enlace' ? urlSegura(url) : url.trim()),
@@ -76,6 +80,13 @@ export default function ProfesorMateriales() {
                 Asignatura y curso
                 <select value={elegida?.id ?? ''} onChange={(e) => setAsignacionId(e.target.value)}>
                   {asignaciones.map((a) => <option key={a.id} value={a.id}>{etiqueta(a)}</option>)}
+                </select>
+              </label>
+              <label>
+                Clase (opcional)
+                <select value={claseValida} onChange={(e) => setClaseId(e.target.value)}>
+                  <option value="">Sin clase</option>
+                  {clasesDeLaAsignacion.map((c) => <option key={c.id} value={c.id}>{c.fecha} · {c.titulo}</option>)}
                 </select>
               </label>
               <label>
