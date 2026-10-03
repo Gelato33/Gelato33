@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { marca } from '../lib/marca'
+import { Logo, LogosInstitucionales } from './Marca'
 
 const MENU = {
   estudiante: [
@@ -29,10 +29,7 @@ export default function Layout() {
   return (
     <div className="app">
       <header className="barra">
-        <div className="marca">
-          <i aria-hidden="true">{marca.nombre.charAt(0)}</i>
-          {marca.nombre}
-        </div>
+        <Logo />
         <nav aria-label="Principal">
           {MENU[perfil.rol].map((l) => (
             <NavLink key={l.a} to={l.a} end={l.fin}>
@@ -48,6 +45,9 @@ export default function Layout() {
       <main className="principal">
         <Outlet />
       </main>
+      <footer className="pie">
+        <LogosInstitucionales etiqueta="Una iniciativa de" />
+      </footer>
     </div>
   )
 }

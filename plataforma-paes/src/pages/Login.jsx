@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { configurado } from '../lib/supabase'
-import { marca } from '../lib/marca'
+import { Logo, LogosInstitucionales } from '../components/Marca'
 import { Aviso } from '../components/ui'
 
 export default function Login() {
@@ -30,10 +30,7 @@ export default function Login() {
   return (
     <div className="login">
       <div className="login-caja">
-        <div className="marca grande">
-          <i aria-hidden="true">{marca.nombre.charAt(0)}</i>
-          {marca.nombre}
-        </div>
+        <Logo grande />
         <h1>Bienvenido</h1>
         <p className="sub">Ingresa para ver tu material y tus evaluaciones.</p>
 
@@ -58,6 +55,7 @@ export default function Login() {
             <button className="btn sec" onClick={() => entrarDemo('admin')}>Entrar como administrador</button>
           </div>
         )}
+        <LogosInstitucionales etiqueta="Una iniciativa de" />
       </div>
     </div>
   )

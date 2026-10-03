@@ -54,6 +54,10 @@ Todo se cambia con variables de entorno, sin tocar código:
 | `VITE_APP_NAME` | Nombre que se ve en la barra y la pestaña |
 | `VITE_BRAND_COLOR` | Color principal |
 | `VITE_MAX_ESTUDIANTES` | Cupo de estudiantes activos del plan |
+| `VITE_LOGO` | Logo principal (por defecto `/marca/logo-preu.png`). Déjalo vacío para mostrar solo el nombre |
+| `VITE_LOGOS_INSTITUCIONALES` | Logos del pie y del ingreso, separados por coma |
+
+Los logos son archivos de `public/marca/` (`logo-preu.png`, `logo-municipalidad.png`, `logo-daem.png`) y el ícono de la pestaña es `public/favicon.png`. Para otra institución, reemplaza esos archivos por los suyos, manteniendo fondo transparente.
 
 Cada cliente tiene su propio proyecto Supabase y su propio sitio Netlify, así los datos quedan completamente separados.
 

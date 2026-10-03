@@ -266,3 +266,15 @@ tr.activa td { background: #efeaff; }
 .modal h2 { margin: 0; text-wrap: balance; }
 .modal-cuerpo { display: flex; flex-direction: column; gap: 8px; font-weight: 600; }
 .modal .acciones { justify-content: flex-end; margin-top: 4px; }
+
+/* Logos */
+.marca.con-logo { background: #fff; border-radius: 14px; padding: 5px 12px; }
+.marca.con-logo img { display: block; height: 38px; width: auto; }
+.marca.con-logo.grande { background: none; padding: 0; margin: 0 0 14px; }
+.marca.con-logo.grande img { height: 84px; max-width: 100%; object-fit: contain; object-position: left; }
+.pie { margin-top: auto; padding: 18px 22px 26px; display: flex; justify-content: center; }
+.institucionales { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.institucionales small { color: var(--suave); font-weight: 700; }
+.institucionales div { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 26px; }
+.institucionales img { height: 40px; width: auto; max-width: 100%; }
+.login-caja .institucionales { margin-top: 18px; padding-top: 16px; border-top: 2px dashed var(--linea); }
