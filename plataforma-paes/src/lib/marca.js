@@ -12,7 +12,7 @@ const desdeEntorno = (valor, porDefecto) => (valor === undefined ? porDefecto : 
 
 export const marca = {
   nombre: import.meta.env.VITE_APP_NAME || 'Abre Tu Futuro Loncoche',
-  color: import.meta.env.VITE_BRAND_COLOR || '#5b3df5',
+  color: import.meta.env.VITE_BRAND_COLOR || '#1860a8',
   maxEstudiantes: Number(import.meta.env.VITE_MAX_ESTUDIANTES) || 150,
   // Logo principal. Vacío = se muestra la inicial del nombre.
   logo: desdeEntorno(import.meta.env.VITE_LOGO, `${base}marca/logo-preu.png`),

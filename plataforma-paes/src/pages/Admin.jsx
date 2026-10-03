@@ -298,7 +298,7 @@ function Asignaturas() {
   )
   const [errorAccion, ejecutar] = useAccion(reload)
   const [nombre, setNombre] = useState('')
-  const [color, setColor] = useState('#5b3df5')
+  const [color, setColor] = useState('#1860a8')
   const [asignatura, setAsignatura] = useState('')
   const [docente, setDocente] = useState('')
   if (loading && !data) return <Cargando />

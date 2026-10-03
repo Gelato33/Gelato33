@@ -21,7 +21,7 @@ create table profiles (
 create table asignaturas (
   id uuid primary key default gen_random_uuid(),
   nombre text not null unique,
-  color text not null default '#5b3df5',
+  color text not null default '#1860a8',
   activa boolean not null default true
 );
 
@@ -212,10 +212,10 @@ create policy storage_borrar on storage.objects for delete to authenticated
 -- ───────────── Datos iniciales ─────────────
 
 insert into asignaturas (nombre, color) values
-  ('Matemática M1', '#2f6fed'),
-  ('Competencia Lectora', '#d9443c'),
-  ('Historia y Cs. Sociales', '#b87400'),
-  ('Ciencias · Biología', '#16875c'),
-  ('Ciencias · Física', '#7447d1'),
-  ('Ciencias · Química', '#cc3d85')
+  ('Matemática M1', '#2a6fd0'),
+  ('Competencia Lectora', '#c93f4a'),
+  ('Historia y Cs. Sociales', '#b36a14'),
+  ('Ciencias · Biología', '#5a8f1f'),
+  ('Ciencias · Física', '#1a8591'),
+  ('Ciencias · Química', '#b83a7d')
 on conflict (nombre) do nothing;

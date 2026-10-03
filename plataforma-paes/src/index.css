@@ -1,19 +1,26 @@
 /* Diseño "Motivador": colores vivos, tarjetas redondeadas, anillos de avance.
-   El color de marca (--ac) se sobrescribe desde VITE_BRAND_COLOR. */
+   Paleta tomada del logo: azul (--ac), verde lima (--sol) y azul marino (--marino).
+   El color de marca (--ac) se sobrescribe desde VITE_BRAND_COLOR y los tonos suaves se derivan de él. */
 :root {
-  --fondo: #eeeafc;
-  --tinta: #1d1640;
+  --ac: #1860a8;
+  --sol: #9cc030;
+  --marino: #14284b;
+  --tinta: #14213a;
   --tarjeta: #ffffff;
-  --suave: #665f8a;
-  --ac: #5b3df5;
-  --sol: #ffc533;
-  --linea: #ddd7f5;
+  --suave: #56688a;
+  --fondo: color-mix(in srgb, var(--ac) 9%, #fff);
+  --linea: color-mix(in srgb, var(--ac) 20%, #fff);
+  --ac-suave: color-mix(in srgb, var(--ac) 14%, #fff);
+  --ac-hover: color-mix(in srgb, var(--ac) 13%, var(--fondo));
+  --ac-oscuro: color-mix(in srgb, var(--ac) 72%, #000);
+  --marino-2: color-mix(in srgb, var(--ac) 30%, var(--marino));
+  --marino-3: color-mix(in srgb, var(--ac) 55%, var(--marino));
   --ok-bg: #d5f5e5;
   --ok-fg: #0d6e45;
   --err-bg: #fde4e2;
   --err-fg: #a3211a;
-  --info-bg: #e6e0ff;
-  --info-fg: #3a22b0;
+  --info-bg: var(--ac-suave);
+  --info-fg: var(--ac-oscuro);
   --display: 'Outfit', system-ui, sans-serif;
   --cuerpo: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color-scheme: light;
@@ -33,12 +40,13 @@ h1, h2, h3, p, ul { margin: 0; }
 ul { list-style: none; padding: 0; }
 button, input, select { font: inherit; }
 a { color: var(--ac); }
-:focus-visible { outline: 3px solid var(--sol); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--ac); outline-offset: 2px; }
+.barra :focus-visible { outline-color: #fff; }
 
 .app { min-height: 100vh; display: flex; flex-direction: column; }
 .barra {
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
-  padding: 14px 22px; background: var(--tinta); color: #fff;
+  padding: 14px 22px; background: var(--marino); color: #fff;
 }
 .marca { display: flex; align-items: center; gap: 9px; font-family: var(--display); font-weight: 800; font-size: 19px; margin-right: auto; }
 .marca i {
@@ -47,12 +55,12 @@ a { color: var(--ac); }
 }
 .marca.grande { font-size: 24px; margin-bottom: 18px; }
 .barra nav { display: flex; flex-wrap: wrap; gap: 4px; }
-.barra nav a { padding: 7px 14px; border-radius: 99px; font-weight: 700; color: #cfc8f2; text-decoration: none; }
+.barra nav a { padding: 7px 14px; border-radius: 99px; font-weight: 700; color: #c9d8ec; text-decoration: none; }
 .barra nav a.active { background: var(--ac); color: #fff; }
-.barra nav a:hover:not(.active) { background: #2d2563; }
-.chip { background: #2d2563; border-radius: 99px; padding: 6px 12px; font-weight: 700; font-size: 13px; color: #fff; border: 0; }
-.chip.boton { cursor: pointer; background: transparent; box-shadow: inset 0 0 0 2px #4a3f95; }
-.chip.boton:hover { background: #2d2563; }
+.barra nav a:hover:not(.active) { background: var(--marino-2); }
+.chip { background: var(--marino-2); border-radius: 99px; padding: 6px 12px; font-weight: 700; font-size: 13px; color: #fff; border: 0; }
+.chip.boton { cursor: pointer; background: transparent; box-shadow: inset 0 0 0 2px var(--marino-3); }
+.chip.boton:hover { background: var(--marino-2); }
 
 .principal { width: 100%; max-width: 1180px; margin: 0 auto; padding: 24px 22px 40px; display: flex; flex-direction: column; gap: 22px; }
 h1 { font-family: var(--display); font-weight: 800; font-size: clamp(26px, 4vw, 32px); line-height: 1.1; text-wrap: balance; }
@@ -103,7 +111,7 @@ li.item small { color: var(--suave); font-weight: 600; display: block; }
 .cuerpo { min-width: 0; flex: 1; }
 li.material { display: block; }
 .mini { flex: none; width: 84px; aspect-ratio: 16/10; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 12px; letter-spacing: 0.06em; }
-.mini.video { background: #3a2f8a; color: #fff; position: relative; }
+.mini.video { background: var(--marino-2); color: #fff; position: relative; }
 .mini.video b { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
 .mini.doc { background: #ffe9a8; color: #6a4a00; }
 .acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
@@ -115,7 +123,7 @@ li.material { display: block; }
 .confirmar { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; font-weight: 700; font-size: 13px; }
 
 .tag { display: inline-block; font-size: 12px; font-weight: 800; padding: 2px 10px; border-radius: 99px; white-space: nowrap; }
-.tag.a { background: #e6e0ff; color: #4528c9; }
+.tag.a { background: var(--ac-suave); color: var(--ac-oscuro); }
 .tag.b { background: var(--ok-bg); color: var(--ok-fg); }
 .tag.c { background: #ffe9a8; color: #6a4a00; }
 
@@ -208,7 +216,7 @@ td { padding: 11px 10px; border-top: 2px dashed var(--linea); font-weight: 600; 
   border: 2px solid var(--linea); background: #fff; border-radius: 14px; padding: 9px 12px; font-weight: 700;
 }
 .opcion:hover { border-color: var(--ac); }
-.opcion[aria-pressed='true'] { border-color: var(--ac); background: #efeaff; }
+.opcion[aria-pressed='true'] { border-color: var(--ac); background: var(--ac-suave); }
 .opcion .punto { margin: 0; }
 .opcion .ok { margin-left: auto; color: var(--ac); font-weight: 800; opacity: 0; }
 .opcion[aria-pressed='true'] .ok { opacity: 1; }
@@ -218,7 +226,7 @@ td { padding: 11px 10px; border-top: 2px dashed var(--linea); font-weight: 600; 
 td .botones { display: flex; flex-direction: column; gap: 6px; align-items: stretch; min-width: 116px; }
 td .botones .btn { padding: 6px 12px; font-size: 13px; }
 td.correo { overflow-wrap: anywhere; }
-tr.activa td { background: #efeaff; }
+tr.activa td { background: var(--ac-suave); }
 .panel-edicion { margin-top: 16px; padding: 14px; border-radius: 18px; background: var(--fondo); }
 .panel-edicion .acciones { margin-top: 12px; }
 
@@ -239,7 +247,7 @@ tr.activa td { background: #efeaff; }
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; gap: 12px; align-items: center;
   width: 100%; padding: 12px 14px; background: none; border: 0; cursor: pointer; text-align: left; color: inherit;
 }
-.usuario-cab:hover { background: #e7e1fb; }
+.usuario-cab:hover { background: var(--ac-hover); }
 .avatar {
   width: 38px; height: 38px; border-radius: 50%; background: var(--ac); color: #fff;
   display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 14px;
@@ -261,7 +269,7 @@ tr.activa td { background: #efeaff; }
 }
 
 /* Cuadro de confirmación */
-.modal-fondo { position: fixed; inset: 0; background: #1d164099; display: grid; place-items: center; padding: 16px; z-index: 50; }
+.modal-fondo { position: fixed; inset: 0; background: #14213a99; display: grid; place-items: center; padding: 16px; z-index: 50; }
 .modal { width: 100%; max-width: 460px; max-height: 100%; overflow: auto; background: #fff; border-radius: 22px; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
 .modal h2 { margin: 0; text-wrap: balance; }
 .modal-cuerpo { display: flex; flex-direction: column; gap: 8px; font-weight: 600; }

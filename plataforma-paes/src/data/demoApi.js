@@ -16,12 +16,12 @@ export const demoSesion = { id: null }
 
 export const db = {
   asignaturas: [
-    { id: 'a1', nombre: 'Matemática M1', color: '#2f6fed', activa: true },
-    { id: 'a2', nombre: 'Competencia Lectora', color: '#d9443c', activa: true },
-    { id: 'a3', nombre: 'Historia y Cs. Sociales', color: '#b87400', activa: true },
-    { id: 'a4', nombre: 'Ciencias · Biología', color: '#16875c', activa: true },
-    { id: 'a5', nombre: 'Ciencias · Física', color: '#7447d1', activa: true },
-    { id: 'a6', nombre: 'Ciencias · Química', color: '#cc3d85', activa: true },
+    { id: 'a1', nombre: 'Matemática M1', color: '#2a6fd0', activa: true },
+    { id: 'a2', nombre: 'Competencia Lectora', color: '#c93f4a', activa: true },
+    { id: 'a3', nombre: 'Historia y Cs. Sociales', color: '#b36a14', activa: true },
+    { id: 'a4', nombre: 'Ciencias · Biología', color: '#5a8f1f', activa: true },
+    { id: 'a5', nombre: 'Ciencias · Física', color: '#1a8591', activa: true },
+    { id: 'a6', nombre: 'Ciencias · Química', color: '#b83a7d', activa: true },
   ],
   usuarios: [
     { id: 'u-adm', nombre: 'Administración', email: 'admin@demo.cl', rol: 'admin', activo: true, asignatura_ids: [] },
